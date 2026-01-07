@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
+import Header from '../components/Header'
+
 export default function AdminPanel() {
     const { role } = useAuth()
     const [profiles, setProfiles] = useState([])
@@ -48,15 +50,19 @@ export default function AdminPanel() {
     }
 
     if (role !== 'admin') {
-        return <div className="dashboard-container"><p>Access Denied. Admins only.</p></div>
+        return (
+            <div className="dashboard-container">
+                <Header title="Access Denied" />
+                <div style={{ padding: '2rem', textAlign: 'center' }}>
+                    <p>Access Denied. Admins only.</p>
+                </div>
+            </div>
+        )
     }
 
     return (
         <div className="dashboard-container">
-            <header className="dashboard-header">
-                <h1>Admin Control Panel</h1>
-                <a href="/" style={{ color: 'white' }}>Back to Dashboard</a>
-            </header>
+            <Header title="Admin Control Panel" />
 
             <div className="admin-content">
                 <h2>User Management</h2>

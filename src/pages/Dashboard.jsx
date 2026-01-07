@@ -7,8 +7,10 @@ import BookingModal from '../components/BookingModal'
 import EditVehicleModal from '../components/EditVehicleModal'
 import ActivityLogModal from '../components/ActivityLog'
 
+import Header from '../components/Header'
+
 export default function Dashboard() {
-    const { user, role, signOut } = useAuth()
+    const { user, role } = useAuth()
     const [vehicles, setVehicles] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
@@ -53,25 +55,7 @@ export default function Dashboard() {
 
     return (
         <div className="dashboard-container">
-            <header className="dashboard-header">
-                <div className="title-section">
-                    <h1>Fleet Dashboard</h1>
-                    <span style={{ color: '#666', fontSize: '0.9rem' }}>Role: {role?.toUpperCase()}</span>
-                    {role === 'admin' && (
-                        <button
-                            onClick={() => window.location.href = '/admin'}
-                            style={{ marginLeft: '1rem', background: '#444', border: 'none', borderRadius: '4px', color: 'white', padding: '0.25rem 0.5rem', cursor: 'pointer' }}
-                        >
-                            Manage Users
-                        </button>
-                    )}
-                </div>
-
-                <div className="user-info">
-                    <span>{user?.email}</span>
-                    <button className="logout-btn" onClick={signOut}>Sign Out</button>
-                </div>
-            </header>
+            <Header />
 
             <div className="dashboard-content">
                 <div className="controls-row">
