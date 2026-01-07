@@ -72,32 +72,141 @@ body {
   padding: 2rem;
 }
 
+/* Header & Navigation */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  border-bottom: 1px solid #333;
   padding-bottom: 1rem;
+  border-bottom: 1px solid #333;
 }
 
+.title-section {
+  cursor: pointer;
+}
+
+.title-section h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Profile Dropdown */
 .user-info {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.logout-btn {
-  background: transparent;
-  border: 1px solid #444;
-  color: var(--text-secondary);
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+.profile-trigger {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2196F3;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
 }
 
-.logout-btn:hover {
+.profile-trigger:hover {
+  border-color: white;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.profile-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  width: 220px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease;
+}
+
+.profile-menu-header {
+  padding: 1rem;
+  border-bottom: 1px solid #444;
   background: #333;
+}
+
+.user-email {
+  font-size: 0.85rem;
+  color: #eee;
+  display: block;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #444;
+  color: #aaa;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.user-role-badge.admin {
+  background: #FFC107;
+  color: black;
+}
+
+.user-role-badge.editor {
+  background: #4CAF50;
   color: white;
+}
+
+.profile-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #ccc;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 0.95rem;
+}
+
+.profile-menu-item:hover {
+  background: #3a3a3a;
+  color: white;
+}
+
+.profile-menu-item.danger {
+  color: #ff6b6b;
+  border-top: 1px solid #333;
+}
+
+.profile-menu-item.danger:hover {
+  background: #331111;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Vehicle Card Styles */
