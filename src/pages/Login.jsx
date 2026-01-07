@@ -22,6 +22,21 @@ export default function Login() {
         setShowPassword(true) // Auto show so user can copy it
     }
 
+    const validatePassword = (pass) => {
+        const minLength = 12
+        const hasUpper = /[A-Z]/.test(pass)
+        const hasLower = /[a-z]/.test(pass)
+        const hasNumber = /[0-9]/.test(pass)
+        const hasSpecial = /[!@#$%^&*()_+]/.test(pass) // Consistent with generator chars
+
+        if (pass.length < minLength) return "Password must be at least 12 characters long."
+        if (!hasUpper) return "Password must contain at least one uppercase letter."
+        if (!hasLower) return "Password must contain at least one lowercase letter."
+        if (!hasNumber) return "Password must contain at least one number."
+        if (!hasSpecial) return "Password must contain at least one special character (!@#$%^&*()_+)."
+        return null
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setLoading(true)
@@ -29,6 +44,12 @@ export default function Login() {
 
         try {
             if (isSignUp) {
+                // Enforce Strong Password
+                const passwordError = validatePassword(password)
+                if (passwordError) {
+                    throw new Error(passwordError)
+                }
+
                 // SignUp Logic
                 await signUp(email, password)
                 setMessage('Registration successful! Please check your email for the confirmation link.')
@@ -55,6 +76,8 @@ export default function Login() {
                     <input
                         className="search-input"
                         type="email"
+                        name="email"
+                        autoComplete="username"
                         placeholder="Email (@deltaquad.com)"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -65,6 +88,8 @@ export default function Login() {
                         <input
                             className="search-input"
                             type={showPassword ? "text" : "password"}
+                            name="password"
+                            autoComplete={isSignUp ? "new-password" : "current-password"}
                             placeholder="Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
