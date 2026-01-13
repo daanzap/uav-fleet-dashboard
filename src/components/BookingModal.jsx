@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import './BookingModal.css'
@@ -10,15 +10,29 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         pilot: '',
         project: '',
         duration: '',
-        notes: ''
+        notes: '',
+        who_ordered: user?.email || ''
     })
     const [loading, setLoading] = useState(false)
+    const [teamMembers, setTeamMembers] = useState([])
 
     // Calendar state
     const [currentMonth, setCurrentMonth] = useState(new Date())
 
-    // Pilot list in alphabetical order
-    const pilots = ['Cabe', 'Devon', 'Edine', 'Ezgi', 'Jaco', 'Michael', 'Renzo', 'Tjeerd', 'Yamac']
+    // Fetch team members from database
+    useEffect(() => {
+        const fetchTeamMembers = async () => {
+            const { data, error } = await supabase
+                .from('team_members')
+                .select('display_name')
+                .order('display_name')
+
+            if (data) {
+                setTeamMembers(data.map(m => m.display_name))
+            }
+        }
+        fetchTeamMembers()
+    }, [])
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -82,6 +96,7 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                 project: formData.project,
                 duration: formData.duration,
                 notes: formData.notes,
+                who_ordered: formData.who_ordered || user?.email,
                 status: 'confirmed'
             }
 
@@ -91,7 +106,6 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
 
             if (error) throw error
 
-            // Log activity
             await supabase.from('activities').insert({
                 vehicle_id: vehicle.id,
                 user_id: user.id,
@@ -195,8 +209,8 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                             <label>Pilot *</label>
                             <select name="pilot" value={formData.pilot} onChange={handleChange} required>
                                 <option value="">Select a pilot</option>
-                                {pilots.map(p => (
-                                    <option key={p} value={p}>{p}</option>
+                                {teamMembers.map(name => (
+                                    <option key={name} value={name}>{name}</option>
                                 ))}
                             </select>
                         </div>

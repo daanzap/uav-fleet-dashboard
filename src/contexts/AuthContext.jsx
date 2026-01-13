@@ -7,34 +7,41 @@ const AuthContext = createContext({})
 export const useAuth = () => useContext(AuthContext)
 
 export const AuthProvider = ({ children }) => {
-    // TEMPORARY MOCK MODE FOR UI VERIFICATION
-    // Because Supabase Email Provider is currently disabled/misconfigured
-    const [user, setUser] = useState({
-        id: 'mock-user-123',
-        email: 'a.chang@deltaquad.com', // Admin Email
-        last_sign_in_at: new Date().toISOString()
-    })
-    const [role, setRole] = useState('admin')
-    const [loading, setLoading] = useState(true) // Initialize loading state
+    const [user, setUser] = useState(null)
+    const [role, setRole] = useState('viewer')
+    const [loading, setLoading] = useState(true)
 
-    // Disable real Supabase effect for now
-    /*
     useEffect(() => {
-        // ... standard supabase logic ...
+        // Check active session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null)
+            if (session?.user) fetchProfile(session.user.id)
+            else setLoading(false)
+        })
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null)
+            if (session?.user) fetchProfile(session.user.id)
+            else {
+                setRole('viewer')
+                setLoading(false)
+            }
+        })
+
+        return () => subscription.unsubscribe()
     }, [])
-    */
-    useEffect(() => { setLoading(false) }, [])
 
     const fetchProfile = async (userId) => {
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('role')
+                .select('role, display_name, email')
                 .eq('id', userId)
                 .single()
 
             if (data) {
-                setRole(data.role)
+                setRole(data.role || 'viewer')
             }
         } catch (err) {
             console.error('Error fetching profile:', err)
@@ -43,7 +50,7 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
-    // DERIVED ROLE LOGIC (Admin whitelist override)
+    // Admin whitelist override
     const finalRole = (user?.email && ['a.chang@deltaquad.com', 'chris@deltaquad.com'].includes(user.email))
         ? 'admin'
         : role

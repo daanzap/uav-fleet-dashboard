@@ -46,7 +46,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
             })
 
             onClose()
-            if (onSave) onSave() // Refresh the vehicle list
+            if (onSave) onSave()
         } catch (err) {
             alert('Error saving vehicle: ' + err.message)
         } finally {
