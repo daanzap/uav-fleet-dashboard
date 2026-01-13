@@ -6,73 +6,55 @@
   --primary-color: #2563eb;
   --primary-hover: #1d4ed8;
   --risk-high: #ef4444;
-  /* Red */
   --risk-mid: #f59e0b;
-  /* Amber */
   --risk-low: #10b981;
-  /* Emerald */
 }
 
-body {
+* {
+  box-sizing: border-box;
+}
+
+html, body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  padding: 0;
+  height: 100%;
   background-color: var(--bg-dark);
   color: var(--text-primary);
-  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 #root {
-  width: 100%;
-  padding: 0;
-  text-align: left;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Login Page */
+/* Auth Pages */
 .login-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  padding: 1rem;
 }
 
 .login-card {
   background-color: var(--bg-card);
-  padding: 3rem;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-  text-align: center;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   border: 1px solid #333;
-}
-
-.auth-button {
-  margin-top: 1.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.auth-button.google {
-  background-color: white;
-  color: #333;
-  font-weight: 500;
-}
-
-.auth-button:hover {
-  opacity: 0.9;
 }
 
 /* Dashboard Layout */
 .dashboard-container {
   max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: 2rem;
+  flex: 1; /* Pushes footer down if we had one */
 }
 
-/* Header & Navigation */
+/* Header */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -89,21 +71,25 @@ body {
 .title-section h1 {
   margin: 0;
   font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Search Header Input */
+.search-input-header {
+  animation: fadeIn 0.2s ease;
 }
 
 /* Profile Dropdown */
 .user-info {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
 }
 
 .profile-trigger {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #2196F3;
+  background: #2563eb;
   color: white;
   display: flex;
   align-items: center;
@@ -111,80 +97,59 @@ body {
   font-weight: bold;
   font-size: 1.2rem;
   cursor: pointer;
+  user-select: none;
   border: 2px solid transparent;
   transition: all 0.2s;
-  user-select: none;
 }
 
 .profile-trigger:hover {
-  border-color: white;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  border-color: rgba(255,255,255,0.5);
 }
 
 .profile-menu {
   position: absolute;
   top: 50px;
   right: 0;
-  background: #2a2a2a;
+  background: #252525;
   border: 1px solid #444;
   border-radius: 8px;
-  width: 220px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  width: 240px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  z-index: 100;
   overflow: hidden;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.1s ease;
 }
 
 .profile-menu-header {
   padding: 1rem;
-  border-bottom: 1px solid #444;
   background: #333;
+  border-bottom: 1px solid #444;
 }
 
 .user-email {
-  font-size: 0.85rem;
-  color: #eee;
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 500;
   display: block;
-  margin-bottom: 0.25rem;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.user-role-badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: #444;
-  color: #aaa;
-  text-transform: uppercase;
-  font-weight: bold;
-}
-
-.user-role-badge.admin {
-  background: #FFC107;
-  color: black;
-}
-
-.user-role-badge.editor {
-  background: #4CAF50;
-  color: white;
-}
-
 .profile-menu-item {
-  display: block;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1rem;
   text-align: left;
   background: none;
   border: none;
   color: #ccc;
   cursor: pointer;
-  transition: background 0.2s;
   font-size: 0.95rem;
+  transition: background 0.1s;
 }
 
-.profile-menu-item:hover {
-  background: #3a3a3a;
+.profile-menu-item:hover:not(.disabled) {
+  background: #333;
   color: white;
 }
 
@@ -194,144 +159,15 @@ body {
 }
 
 .profile-menu-item.danger:hover {
-  background: #331111;
+  background: #381515;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.profile-menu-item.disabled {
+    cursor: default;
+    opacity: 0.5;
 }
 
-/* Vehicle Card Styles */
-.vehicle-card {
-  background-color: var(--bg-card);
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  transition: transform 0.2s;
-}
-
-.vehicle-card:hover {
-  transform: translateY(-2px);
-  border-color: #555;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-}
-
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.title-row h3 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.risk-icon {
-  font-size: 1.2rem;
-  cursor: help;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 99px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-transform: capitalize;
-}
-
-.status-badge.available {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #34d399;
-}
-
-.status-badge.maintenance {
-  background-color: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-}
-
-.status-badge.mission {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-}
-
-.status-badge.decommissioned {
-  background-color: rgba(107, 114, 128, 0.2);
-  color: #9ca3af;
-}
-
-.vehicle-image {
-  height: 160px;
-  background-color: #000;
-  border-radius: 6px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.vehicle-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.placeholder-image {
-  color: #666;
-}
-
-.card-details p {
-  margin: 0.25rem 0;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-}
-
-.card-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: auto;
-}
-
-.card-actions button {
-  flex: 1;
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid #444;
-  background: transparent;
-  color: white;
-  cursor: pointer;
-}
-
-.card-actions button:hover {
-  background: #333;
-}
-
-.card-actions .btn-primary {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.card-actions .btn-primary:hover {
-  background: var(--primary-hover);
-}
-
-/* Dashboard Grid */
+/* Dashboard Content */
 .dashboard-content {
   display: flex;
   flex-direction: column;
@@ -345,15 +181,140 @@ body {
 
 .search-input {
   flex: 1;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   background: #2a2a2a;
   border: 1px solid #444;
   border-radius: 6px;
   color: white;
+  font-size: 1rem;
+}
+
+.search-input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
 }
 
 .vehicle-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  align-items: start; /* Prevents stretching */
+}
+
+/* Vehicle Card - Matches Screenshot */
+.vehicle-card {
+  background-color: var(--bg-card);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+}
+
+.vehicle-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  border-color: #555;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge.available { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.status-badge.maintenance { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+.status-badge.mission { background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.3); }
+.status-badge.unknown { background: rgba(100, 100, 100, 0.2); color: #ccc; border: 1px solid #555; }
+
+.vehicle-image {
+    background: #000;
+    height: 160px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5rem 0;
+}
+
+.card-details h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.4rem;
+    color: white;
+}
+
+.card-details p {
+    color: #888;
+    line-height: 1.5;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.card-actions {
+    margin-top: auto;
+    padding-top: 1rem;
+}
+
+.card-actions button {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.card-actions button:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.2);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.loading-screen {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-family: monospace;
 }

@@ -8,7 +8,7 @@ export const useAuth = () => useContext(AuthContext)
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null)
-    const [role, setRole] = useState('viewer') // Default to viewer
+    const [role, setRole] = useState('viewer')
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -40,15 +40,20 @@ export const AuthProvider = ({ children }) => {
                 .eq('id', userId)
                 .single()
 
-            if (data) setRole(data.role)
-            // If no profile exists yet (new user), the trigger in DB will create it, 
-            // but strictly speaking we default to viewer until verified.
+            if (data) {
+                setRole(data.role)
+            }
         } catch (err) {
             console.error('Error fetching profile:', err)
         } finally {
             setLoading(false)
         }
     }
+
+    // DERIVED ROLE LOGIC (Admin whitelist override)
+    const finalRole = (user?.email && ['a.chang@deltaquad.com', 'chris@deltaquad.com'].includes(user.email))
+        ? 'admin'
+        : role
 
     const signUp = async (email, password) => {
         const { data, error } = await supabase.auth.signUp({
@@ -84,7 +89,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, role, loading, signUp, signIn, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, role: finalRole, loading, signUp, signIn, signInWithGoogle, signOut }}>
             {!loading && children}
         </AuthContext.Provider>
     )

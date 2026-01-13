@@ -1,21 +1,64 @@
-
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth, AuthProvider } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import AdminPanel from './pages/AdminPanel'
+import Profile from './pages/Profile'
 import './App.css'
 
+function PrivateRoute({ children, adminOnly = false }) {
+  const { user, role, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) return <div className="loading-screen">Initialize Fleet Systems...</div>
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (adminOnly && role !== 'admin') {
+    // User tried to access admin page but is not admin
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
 
 function AppRoutes() {
-  const { user, role } = useAuth()
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
 
-  if (!user) return <Login />
+        <Route path="/" element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        } />
 
-  // Simple "client-side router" for demo purposes
-  const path = window.location.pathname
-  if (path === '/admin') return <AdminPanel />
+        <Route path="/profile" element={
+          <PrivateRoute>
+            <Profile />
+          </PrivateRoute>
+        } />
 
-  return <Dashboard />
+        <Route path="/admin" element={
+          <PrivateRoute adminOnly={true}>
+            <AdminPanel />
+          </PrivateRoute>
+        } />
+
+        {/* Catch all redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  )
+}
+
+function PublicOnlyRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (!loading && user) return <Navigate to="/" replace />
+  return children
 }
 
 function App() {
