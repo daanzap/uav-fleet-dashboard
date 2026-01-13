@@ -39,37 +39,59 @@ export default function Header({ title }) {
         }
     }
 
+    const handleAddVehicle = () => {
+        // Trigger generic add action - in real app would open modal
+        // For now we might need to pass this down or just alert
+        const evt = new CustomEvent('open-add-vehicle-modal')
+        window.dispatchEvent(evt)
+    }
+
     const initial = user?.email ? user.email[0].toUpperCase() : '?'
 
     return (
         <header className="dashboard-header">
             <div className="title-section" onClick={() => navigate('/')}>
-                <h1>{title || "Fleet Dashboard"}</h1>
-            </div>
-
-            <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-
-                {/* Search Icon & Input */}
-                <div className="search-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    {showSearch && (
-                        <input
-                            type="text"
-                            className="search-input-header"
-                            placeholder="Search fleet..."
-                            autoFocus
-                            onBlur={(e) => !e.target.value && setShowSearch(false)}
-                            style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #444', background: '#222', color: 'white' }}
-                        />
-                    )}
-                    <div
-                        className="icon-btn"
-                        onClick={() => setShowSearch(!showSearch)}
-                        style={{ cursor: 'pointer', fontSize: '1.2rem', color: '#ccc' }}
-                        title="Search"
-                    >
-                        🔍
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ color: '#f97316', fontSize: '1.5rem' }}>⚡</span> {/* Logo placeholder */}
+                    <div>
+                        <h1 style={{ fontSize: '1.4rem', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', margin: 0 }}>
+                            DQ Vehicle Pool
+                        </h1>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', letterSpacing: '1.5px', marginTop: '4px', fontWeight: '600' }}>
+                            R&D FIELD OPERATIONS UNIT // SECTOR 7
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+                {/* Search (Hidden in reference but user asked for it earlier, keeping it subtle) */}
+                {showSearch ? (
+                    <input
+                        type="text"
+                        className="search-input-header"
+                        placeholder="Search..."
+                        autoFocus
+                        onBlur={(e) => !e.target.value && setShowSearch(false)}
+                    />
+                ) : (
+                    <div className="icon-btn-header" onClick={() => setShowSearch(true)} title="Search">
+                        🔍
+                    </div>
+                )}
+
+                {/* Settings Button (Ref match) */}
+                <div className="icon-btn-header" title="Settings">
+                    ⚙️
+                </div>
+
+                {/* Add Vehicle Button (Ref match) */}
+                {role === 'admin' && (
+                    <button className="btn-add-vehicle-header" onClick={handleAddVehicle}>
+                        + ADD VEHICLE
+                    </button>
+                )}
 
                 {/* Profile Section */}
                 <div className="user-info" ref={menuRef}>
@@ -86,37 +108,16 @@ export default function Header({ title }) {
                             <div className="profile-menu-header">
                                 <span className="user-email">{user?.email}</span>
                             </div>
-
-                            {/* Profile Page Link */}
-                            <button
-                                className="profile-menu-item"
-                                onClick={handleProfileClick}
-                            >
-                                👤 Profile Page
-                            </button>
-
-                            {/* Admin / User Role Item */}
+                            <button className="profile-menu-item" onClick={handleProfileClick}>👤 Profile Page</button>
                             <button
                                 className={`profile-menu-item ${role === 'admin' ? '' : 'disabled'}`}
                                 onClick={handleAdminClick}
-                                style={{
-                                    opacity: role === 'admin' ? 1 : 0.5,
-                                    cursor: role === 'admin' ? 'pointer' : 'default',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}
+                                style={{ opacity: role === 'admin' ? 1 : 0.5, cursor: role === 'admin' ? 'pointer' : 'default', display: 'flex', justifyContent: 'space-between' }}
                             >
                                 <span>{role === 'admin' ? '⚡ Admin' : '👤 User'}</span>
-                                {role === 'admin' && <span style={{ fontSize: '0.8em' }}>➜</span>}
+                                {role === 'admin' && <span>➜</span>}
                             </button>
-
-                            <button
-                                className="profile-menu-item danger"
-                                onClick={handleLogout}
-                            >
-                                Sign Out
-                            </button>
+                            <button className="profile-menu-item danger" onClick={handleLogout}>Sign Out</button>
                         </div>
                     )}
                 </div>

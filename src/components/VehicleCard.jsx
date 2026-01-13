@@ -18,43 +18,71 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) 
     const { role } = useAuth()
     const isEditor = role === 'editor' || role === 'admin'
 
+    // Status mapping for colors/labels
+    const getStatusStyle = (status) => {
+        const s = status?.toLowerCase() || 'unknown'
+        if (s.includes('available') || s.includes('ready')) return { className: 'status-ready', icon: '✓', label: 'Ready' }
+        if (s.includes('maintenance')) return { className: 'status-maintenance', icon: '⚠️', label: 'Maintenance' }
+        if (s.includes('mission')) return { className: 'status-mission', icon: '🚀', label: 'On Mission' }
+        return { className: 'status-unknown', icon: '?', label: status }
+    }
+
+    const { className, icon, label } = getStatusStyle(vehicle.status)
+
     return (
         <div className="vehicle-card">
-            <div className="card-header">
-                <div className="title-row">
-                    <h3>{vehicle.name}</h3>
-                    <span className="risk-icon" title={`Risk Level: ${vehicle.risk_level}`}>
-                        {RISK_ICONS[vehicle.risk_level] || '❓'}
-                    </span>
+            {/* Header: Status & Edit */}
+            <div className="card-top-row">
+                <div className={`status-pill ${className}`}>
+                    <span className="status-icon">{icon}</span>
+                    <span className="status-label">{label}</span>
                 </div>
-                <span className={`status-badge ${vehicle.status.toLowerCase()}`}>
-                    {vehicle.status}
-                </span>
-            </div>
-
-            <div className="vehicle-image">
-                {vehicle.image_url ? (
-                    <img src={vehicle.image_url} alt={vehicle.name} />
-                ) : (
-                    <div className="placeholder-image">No Image</div>
-                )}
-            </div>
-
-            <div className="card-details">
-                <p><strong>Type:</strong> {vehicle.type}</p>
-                <p><strong>HW Config:</strong> {vehicle.hw_config || 'N/A'}</p>
-                <p><strong>SW Version:</strong> {vehicle.sw_version || 'N/A'}</p>
-                {vehicle.notes && <p className="notes"><em>{vehicle.notes}</em></p>}
-            </div>
-
-            <div className="card-actions">
-                <button onClick={() => onViewHistory(vehicle)}>History</button>
                 {isEditor && (
-                    <>
-                        <button className="btn-secondary" onClick={() => onEdit(vehicle)}>Edit</button>
-                        <button className="btn-primary" onClick={() => onBook(vehicle)}>Book</button>
-                    </>
+                    <button className="icon-btn-edit" onClick={() => onEdit(vehicle)} title="Edit Vehicle">
+                        ✎
+                    </button>
                 )}
+            </div>
+
+            {/* Identity Section */}
+            <div className="card-identity">
+                <div className="icon-box">
+                    🚀
+                </div>
+                <div className="id-text">
+                    <span className="unit-label">UNIT IDENTIFIER</span>
+                    <h2 className="unit-id">{vehicle.name}</h2>
+                </div>
+            </div>
+
+            {/* Details */}
+            <div className="card-main-info">
+                <h3 className="vehicle-name">{vehicle.name}</h3>
+                <p className="vehicle-desc">
+                    {vehicle.type} • {vehicle.sw_version ? `v${vehicle.sw_version}` : 'No SW info'}
+                    <br />
+                    <span style={{ opacity: 0.7 }}>{vehicle.notes || "No operational notes provided."}</span>
+                </p>
+            </div>
+
+            {/* Bookings Placeholder (Static for layout matching) */}
+            <div className="booking-section">
+                {/* Check if we have booking info, otherwise show placeholder */}
+                {vehicle.next_booking ? (
+                    <div className="booking-active">
+                        <span className="booking-date">{vehicle.next_booking.date}</span>
+                        <span className="booking-user">{vehicle.next_booking.user}</span>
+                    </div>
+                ) : (
+                    <div className="booking-empty">No active bookings</div>
+                )}
+            </div>
+
+            {/* Action Button */}
+            <div className="card-footer">
+                <button className="btn-book-now" onClick={() => onBook(vehicle)}>
+                    <span style={{ marginRight: '6px' }}>📝</span> BOOK NOW
+                </button>
             </div>
         </div>
     )

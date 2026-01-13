@@ -1,67 +1,71 @@
+/* === UAV Fleet Dashboard - Clean Rebuild === */
+
 :root {
-  --bg-dark: #121212;
-  --bg-card: #1e1e1e;
-  --text-primary: #ffffff;
-  --text-secondary: #b0b0b0;
+  --bg-dark: #0f172a;
+  --bg-card: #162032;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
   --primary-color: #2563eb;
   --primary-hover: #1d4ed8;
-  --risk-high: #ef4444;
-  --risk-mid: #f59e0b;
-  --risk-low: #10b981;
+  --border-color: #334155;
+  --accent-orange: #f97316;
 }
 
 * {
   box-sizing: border-box;
-}
-
-html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
+}
+
+html,
+body {
+  min-height: 100vh;
   background-color: var(--bg-dark);
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 #root {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: 100vh;
 }
 
-/* Auth Pages */
+/* ========== AUTH / LOGIN ========== */
 .login-container {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   padding: 1rem;
+  background-color: var(--bg-dark);
 }
 
 .login-card {
   background-color: var(--bg-card);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border: 1px solid #333;
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
 }
 
-/* Dashboard Layout */
+/* ========== DASHBOARD LAYOUT ========== */
 .dashboard-container {
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
   padding: 2rem;
-  flex: 1; /* Pushes footer down if we had one */
+  background-color: var(--bg-dark);
 }
 
-/* Header */
+/* ========== HEADER ========== */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 1rem 0;
   margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .title-section {
@@ -69,18 +73,74 @@ html, body {
 }
 
 .title-section h1 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   margin: 0;
-  font-size: 1.5rem;
+}
+
+/* Header Action Buttons */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.icon-btn-header {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1e293b;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.2rem;
+}
+
+.icon-btn-header:hover {
+  background: #334155;
+  color: white;
+}
+
+.btn-add-vehicle-header {
+  background: #1e293b;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0 1.2rem;
+  height: 40px;
+  border-radius: 4px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
 }
 
-/* Search Header Input */
+.btn-add-vehicle-header:hover {
+  background: #334155;
+  color: white;
+}
+
 .search-input-header {
-  animation: fadeIn 0.2s ease;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  outline: none;
+  height: 40px;
+  width: 200px;
 }
 
-/* Profile Dropdown */
+/* ========== PROFILE DROPDOWN ========== */
 .user-info {
   position: relative;
 }
@@ -89,7 +149,7 @@ html, body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #2563eb;
+  background: var(--primary-color);
   color: white;
   display: flex;
   align-items: center;
@@ -103,27 +163,26 @@ html, body {
 }
 
 .profile-trigger:hover {
-  border-color: rgba(255,255,255,0.5);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .profile-menu {
   position: absolute;
   top: 50px;
   right: 0;
-  background: #252525;
-  border: 1px solid #444;
+  background: #1e293b;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   width: 240px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   z-index: 100;
   overflow: hidden;
-  animation: fadeIn 0.1s ease;
 }
 
 .profile-menu-header {
   padding: 1rem;
-  background: #333;
-  border-bottom: 1px solid #444;
+  background: #0f172a;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .user-email {
@@ -149,13 +208,13 @@ html, body {
 }
 
 .profile-menu-item:hover:not(.disabled) {
-  background: #333;
+  background: #334155;
   color: white;
 }
 
 .profile-menu-item.danger {
   color: #ff6b6b;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--border-color);
 }
 
 .profile-menu-item.danger:hover {
@@ -163,158 +222,262 @@ html, body {
 }
 
 .profile-menu-item.disabled {
-    cursor: default;
-    opacity: 0.5;
+  cursor: default;
+  opacity: 0.5;
 }
 
-/* Dashboard Content */
+/* ========== DASHBOARD CONTENT ========== */
 .dashboard-content {
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
 
-.controls-row {
-  display: flex;
-  gap: 1rem;
-}
-
-.search-input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 6px;
-  color: white;
-  font-size: 1rem;
-}
-
-.search-input:focus {
-    border-color: var(--primary-color);
-    outline: none;
-}
-
-.btn-primary {
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 0 1.5rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background 0.2s;
-}
-
-.btn-primary:hover {
-    background: var(--primary-hover);
-}
-
+/* ========== VEHICLE GRID - HORIZONTAL 3-COL ========== */
 .vehicle-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
+  /* FORCE 3 COLUMNS */
   gap: 1.5rem;
-  align-items: start; /* Prevents stretching */
 }
 
-/* Vehicle Card - Matches Screenshot */
+@media (max-width: 1200px) {
+  .vehicle-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .vehicle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========== VEHICLE CARD ========== */
 .vehicle-card {
   background-color: var(--bg-card);
-  border: 1px solid #333;
-  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   transition: transform 0.2s, box-shadow 0.2s;
-  height: 100%;
 }
 
 .vehicle-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  border-color: #555;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-color: #4a5568;
 }
 
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
+/* Card Top Row */
+.card-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.status-badge {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid transparent;
 }
 
-.status-badge.available { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-.status-badge.maintenance { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-.status-badge.mission { background: rgba(37, 99, 235, 0.15); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.3); }
-.status-badge.unknown { background: rgba(100, 100, 100, 0.2); color: #ccc; border: 1px solid #555; }
-
-.vehicle-image {
-    background: #000;
-    height: 160px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0.5rem 0;
+.status-ready {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
-.card-details h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.4rem;
-    color: white;
+.status-maintenance {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
-.card-details p {
-    color: #888;
-    line-height: 1.5;
-    font-size: 0.9rem;
-    margin: 0;
+.status-mission {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
-.card-actions {
-    margin-top: auto;
-    padding-top: 1rem;
+.status-unknown {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
 }
 
-.card-actions button {
-    width: 100%;
-    padding: 0.75rem;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+.icon-btn-edit {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.1s;
 }
 
-.card-actions button:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.2);
+.icon-btn-edit:hover {
+  background: #2d3748;
+  color: #fff;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Card Identity */
+.card-identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.icon-box {
+  width: 48px;
+  height: 48px;
+  background: #1e293b;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.vehicle-card:hover .icon-box {
+  border-color: var(--accent-orange);
+  color: var(--accent-orange);
+}
+
+.id-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.unit-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.unit-id {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Card Info */
+.card-main-info {
+  margin-top: 0.2rem;
+}
+
+.vehicle-name {
+  margin: 0 0 0.4rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.vehicle-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  min-height: 2.5em;
+}
+
+/* Booking Section */
+.booking-section {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+  margin-top: auto;
+}
+
+.booking-empty {
+  font-size: 0.8rem;
+  color: #4b5563;
+  text-align: center;
+  padding: 0.5rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
+}
+
+.booking-active {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  background: #1e293b;
+  padding: 0.5rem;
+  border-radius: 4px;
+  color: #cbd5e1;
+}
+
+/* Card Footer Button */
+.card-footer {
+  margin-top: 0.5rem;
+}
+
+.btn-book-now {
+  width: 100%;
+  padding: 0.8rem;
+  background: #334155;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+
+.btn-book-now:hover {
+  background: #475569;
+}
+
+/* ========== UTILITIES ========== */
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
 }
 
 .loading-screen {
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    font-family: monospace;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-family: monospace;
+  background: var(--bg-dark);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

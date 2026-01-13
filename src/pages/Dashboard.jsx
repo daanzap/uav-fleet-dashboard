@@ -24,6 +24,15 @@ export default function Dashboard() {
         fetchVehicles()
     }, [])
 
+    // Listen for "Add Vehicle" button click from Header
+    useEffect(() => {
+        const handleAddVehicle = () => {
+            setEditingVehicle({}) // Open modal with empty vehicle (create mode)
+        }
+        window.addEventListener('open-add-vehicle-modal', handleAddVehicle)
+        return () => window.removeEventListener('open-add-vehicle-modal', handleAddVehicle)
+    }, [])
+
     const fetchVehicles = async () => {
         try {
             setLoading(true)
@@ -58,21 +67,6 @@ export default function Dashboard() {
             <Header />
 
             <div className="dashboard-content">
-                <div className="controls-row">
-                    <input
-                        type="text"
-                        placeholder="Search vehicles via Name, Type, Status..."
-                        className="search-input"
-                        value={searchQuery}
-                        onChange={handleSearch}
-                    />
-                    {isEditor && (
-                        <button className="btn-primary" onClick={() => setEditingVehicle({})}>
-                            + Add Vehicle
-                        </button>
-                    )}
-                </div>
-
                 {loading ? (
                     <p>Loading fleet data...</p>
                 ) : (
@@ -97,11 +91,19 @@ export default function Dashboard() {
 
             {/* Modals */}
             {bookingVehicle && (
-                <BookingModal vehicle={bookingVehicle} onClose={() => setBookingVehicle(null)} />
+                <BookingModal
+                    vehicle={bookingVehicle}
+                    onClose={() => setBookingVehicle(null)}
+                    onSave={fetchVehicles}
+                />
             )}
 
             {editingVehicle && (
-                <EditVehicleModal vehicle={editingVehicle} onClose={() => setEditingVehicle(null)} />
+                <EditVehicleModal
+                    vehicle={editingVehicle}
+                    onClose={() => setEditingVehicle(null)}
+                    onSave={fetchVehicles}
+                />
             )}
 
             {historyVehicle && (
