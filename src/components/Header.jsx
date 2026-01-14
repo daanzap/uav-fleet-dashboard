@@ -55,7 +55,7 @@ export default function Header({ title }) {
                     <span style={{ color: '#f97316', fontSize: '1.5rem' }}>⚡</span> {/* Logo placeholder */}
                     <div>
                         <h1 style={{ fontSize: '1.4rem', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', margin: 0 }}>
-                            DQ Vehicle Pool
+                            DQ Vehicle Dashboard
                         </h1>
                         <div style={{ fontSize: '0.7rem', color: '#64748b', letterSpacing: '1.5px', marginTop: '4px', fontWeight: '600' }}>
                             R&D FIELD OPERATIONS UNIT // SECTOR 7
