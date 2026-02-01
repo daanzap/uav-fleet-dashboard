@@ -14,12 +14,13 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        // Check active session
+        // Check active session and handle OAuth callback
         supabase.auth.getSession().then(({ data: { session }, error }) => {
             if (error) {
-                console.error('Session error:', error)
-                // Clear hash to prevent infinite loop
+                console.error('Auth session error:', error)
+                // Clear hash to prevent infinite loop on error
                 if (window.location.hash) {
+                    console.log('Clearing invalid auth hash')
                     window.history.replaceState(null, '', window.location.pathname)
                 }
             }
