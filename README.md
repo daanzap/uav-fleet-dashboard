@@ -107,15 +107,38 @@ npm install
 npm run dev
 ```
 
-### Database Migration
-Run the SQL scripts located in `/db` to set up the tables and RLS policies.
+### Testing (run after develop)
 
-```sql
--- RLS Policy Example for Technical Pool
-CREATE POLICY "Tech Pool Visibility" ON vehicles
-FOR SELECT USING (
-  (auth.jwt() ->> 'department' IN ('R&D', 'Training')) 
-  AND 
-  (department IN ('R&D', 'Training'))
-);
-```
+Before pushing or opening a PR, run:
+
+- **Unit tests:** `npm run test:run`
+- **E2E tests:** `npm run test:e2e` (first time: `npx playwright install`)
+
+CI runs these on push/PR to `main`. See **[TESTING.md](TESTING.md)** for full details.
+
+### Database Migration
+
+**Option A — Run from your machine (recommended)**  
+See **[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)** for step-by-step instructions (where to find the database password, how to get the connection string, and how to run migrations).
+
+**Option B — Supabase SQL Editor**  
+Run the SQL files in `/db` in order in the Supabase **SQL Editor**:
+1. `schema.sql` — base tables
+2. `01_schema_fixes.sql` — extra columns (e.g. `who_ordered`, `purpose`)
+3. `03_bookings_columns.sql` — booking form columns: `duration`, `notes`, `project_name`, `status`
+4. `04_bookings_prd_snapshot.sql` — PRD: `risk_level`, `location`, `snapshotted_hw_config` + snapshot trigger
+5. `05_department_and_jsonb.sql` — PRD: `department` columns + `hw_config` JSONB conversion
+6. `06_department_rls.sql` — PRD: Department-based RLS (R&D+Training shared, Marketing isolated)
+7. `02_enhanced_rls.sql` — Enhanced RLS (optional, if not using 06)
+8. `deltaquad_update.sql` — domain/admin (optional)
+
+**Important:** Migrations 5 and 6 implement the PRD department isolation requirements.
+
+If the booking form errors with *"Could not find the 'duration' column"*, run `03_bookings_columns.sql`.
+
+### Deploy (staging / production)
+
+- **順序：** Staging 部署 → Staging UAT 簽核 → 打 tag 並從 tag 部署 production；Rollback = 重新部署上一個 tag。
+- **步驟：** 見 **docs/STAGING_DEPLOY_STEPS.md**（Vercel/Netlify 操作、PRD §5 UAT、tag 與 rollback）。
+- **Staging：** 在 Vercel 或 Netlify 連此 repo，設定 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`。
+- **Rollback：** 重新部署上一個 tag（e.g. v0.9.0）。見 **docs/RELEASE_AND_TASK_FLOW.md** §3。

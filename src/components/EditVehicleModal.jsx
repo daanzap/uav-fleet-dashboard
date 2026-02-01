@@ -8,18 +8,33 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
     const { user } = useAuth()
     const isNew = !vehicle?.id
 
+    // Hardware config: plain text for now (no JSON); backward compat for existing object/JSON
+    const getInitialHwConfig = () => {
+        if (!vehicle?.hw_config) return ''
+        if (typeof vehicle.hw_config === 'object') {
+            if (vehicle.hw_config.raw != null) return String(vehicle.hw_config.raw)
+            return JSON.stringify(vehicle.hw_config, null, 2)
+        }
+        return String(vehicle.hw_config)
+    }
+
     const [formData, setFormData] = useState({
         name: vehicle?.name || '',
         status: vehicle?.status || 'Available',
         risk_level: vehicle?.risk_level || 'low',
-        hw_config: vehicle?.hw_config || '',
+        hw_config: getInitialHwConfig(),
         sw_version: vehicle?.sw_version || '',
-        notes: vehicle?.notes || ''
+        notes: vehicle?.notes || '',
+        department: vehicle?.department || 'R&D'
     })
     const [loading, setLoading] = useState(false)
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
+        const { name, value } = e.target
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }))
     }
 
     const handleSubmit = async (e) => {
@@ -27,7 +42,20 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
         setLoading(true)
 
         try {
-            const payload = { ...formData }
+            // Store hw_config as plain text in JSONB (single key) for now; format may change later
+            const hwConfigValue = formData.hw_config.trim()
+                ? { raw: formData.hw_config }
+                : {}
+
+            const payload = {
+                name: formData.name,
+                status: formData.status,
+                risk_level: formData.risk_level,
+                hw_config: hwConfigValue,
+                sw_version: formData.sw_version,
+                notes: formData.notes,
+                department: formData.department
+            }
             if (!isNew) payload.id = vehicle.id
 
             const { data, error } = await supabase
@@ -114,26 +142,39 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                         </div>
                     </div>
 
-                    {/* HW & SW Row */}
-                    <div className="edit-form-row">
-                        <div className="edit-form-group">
-                            <label>Hardware Config</label>
-                            <input
-                                name="hw_config"
-                                value={formData.hw_config}
-                                onChange={handleChange}
-                                placeholder="e.g. V3.1 Frame"
-                            />
+                    {/* Department */}
+                    <div className="edit-form-group">
+                        <label>Department</label>
+                        <div className="edit-select-wrapper">
+                            <select name="department" value={formData.department} onChange={handleChange}>
+                                <option value="R&D">R&D</option>
+                                <option value="Training">Training</option>
+                                <option value="Marketing">Marketing</option>
+                            </select>
                         </div>
-                        <div className="edit-form-group">
-                            <label>Software Version</label>
-                            <input
-                                name="sw_version"
-                                value={formData.sw_version}
-                                onChange={handleChange}
-                                placeholder="e.g. v2.0.4"
-                            />
-                        </div>
+                    </div>
+
+                    {/* Hardware Config: plain text for now (format may change later) */}
+                    <div className="edit-form-group">
+                        <label>Hardware Config</label>
+                        <input
+                            type="text"
+                            name="hw_config"
+                            value={formData.hw_config}
+                            onChange={handleChange}
+                            placeholder="e.g. Skynode SN-1024, Here3, SolidState-22Ah"
+                        />
+                    </div>
+
+                    {/* Software Version */}
+                    <div className="edit-form-group">
+                        <label>Software Version</label>
+                        <input
+                            name="sw_version"
+                            value={formData.sw_version}
+                            onChange={handleChange}
+                            placeholder="e.g. v2.0.4"
+                        />
                     </div>
 
                     {/* Notes */}

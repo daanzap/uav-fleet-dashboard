@@ -235,7 +235,19 @@ body {
 .dashboard-content {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
+}
+
+.dashboard-fleet-section {
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-fleet-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
 }
 
 /* ========== VEHICLE GRID - HORIZONTAL 3-COL ========== */
@@ -447,6 +459,62 @@ body {
 
 .btn-book-now:hover {
   background: #475569;
+}
+
+/* ========== PROFILE PAGE ACTIONS (same style as Edit Vehicle) ========== */
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.profile-actions-bottom {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  justify-content: center;
+}
+
+.profile-btn-cancel {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  background: #1e293b;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-btn-cancel:hover {
+  background: #334155;
+  color: white;
+}
+
+.profile-btn-save {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.profile-btn-save:hover:not(:disabled) {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  transform: translateY(-1px);
+}
+
+.profile-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ========== UTILITIES ========== */

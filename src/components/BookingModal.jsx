@@ -1,42 +1,58 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { PILOT_OPTIONS } from '../lib/constants'
+import db from '../lib/database'
 import './BookingModal.css'
 
+const RISK_LEVEL_OPTIONS = ['Low', 'Medium', 'High']
+
+function emailLocalPart(email) {
+    if (!email || !email.includes('@')) return email || ''
+    return email.slice(0, email.indexOf('@'))
+}
+
 export default function BookingModal({ vehicle, onClose, onSave }) {
-    const { user } = useAuth()
+    const { user, displayName } = useAuth()
+    const userName = displayName ?? emailLocalPart(user?.email) ?? 'Current User'
     const [selectedDates, setSelectedDates] = useState([])
+    const [whoOrderedMode, setWhoOrderedMode] = useState('me') // 'me' | 'others'
+    const [whoOrderedCustom, setWhoOrderedCustom] = useState('')
     const [formData, setFormData] = useState({
         pilot: '',
         project: '',
+        risk_level: '',
+        location: '',
         duration: '',
         notes: '',
-        who_ordered: user?.email || ''
+        who_ordered: userName
     })
     const [loading, setLoading] = useState(false)
-    const [teamMembers, setTeamMembers] = useState([])
+    const [conflictWarning, setConflictWarning] = useState(null)
 
     // Calendar state
     const [currentMonth, setCurrentMonth] = useState(new Date())
 
-    // Fetch team members from database
-    useEffect(() => {
-        const fetchTeamMembers = async () => {
-            const { data, error } = await supabase
-                .from('team_members')
-                .select('display_name')
-                .order('display_name')
-
-            if (data) {
-                setTeamMembers(data.map(m => m.display_name))
-            }
-        }
-        fetchTeamMembers()
-    }, [])
-
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
+
+    const whoOrderedValue = whoOrderedMode === 'others' ? whoOrderedCustom : userName
+
+    // Soft Lock: check conflict when dates change so user sees warning before submitting
+    useEffect(() => {
+        if (selectedDates.length === 0) {
+            setConflictWarning(null)
+            return
+        }
+        const start_time = new Date(selectedDates[0] + 'T00:00:00Z').toISOString()
+        const end_time = new Date(selectedDates[selectedDates.length - 1] + 'T23:59:59Z').toISOString()
+        db.getConflictBooking(vehicle.id, start_time, end_time)
+            .then(conflict => {
+                setConflictWarning(conflict ? { projectName: conflict.project_name || 'another booking' } : null)
+            })
+            .catch(() => setConflictWarning(null))
+    }, [vehicle.id, selectedDates.join(',')])
 
     // Calendar functions
     const getDaysInMonth = (date) => {
@@ -87,16 +103,23 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         setLoading(true)
 
         try {
+            const startDate = selectedDates[0]
+            const endDate = selectedDates[selectedDates.length - 1]
+            const start_time = new Date(startDate + 'T00:00:00Z').toISOString()
+            const end_time = new Date(endDate + 'T23:59:59Z').toISOString()
+
             const bookingData = {
                 vehicle_id: vehicle.id,
                 user_id: user.id,
-                start_date: selectedDates[0],
-                end_date: selectedDates[selectedDates.length - 1],
-                pilot: formData.pilot,
-                project: formData.project,
-                duration: formData.duration,
-                notes: formData.notes,
-                who_ordered: formData.who_ordered || user?.email,
+                start_time,
+                end_time,
+                pilot_name: formData.pilot,
+                project_name: formData.project || null,
+                risk_level: formData.risk_level || null,
+                location: formData.location || null,
+                duration: formData.duration || null,
+                notes: formData.notes || null,
+                who_ordered: whoOrderedValue || userName || user?.email || null,
                 status: 'confirmed'
             }
 
@@ -190,7 +213,7 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                     {/* Right: Form */}
                     <form onSubmit={handleSubmit} className="booking-form-section">
                         <div className="booking-form-group">
-                            <label>Dates</label>
+                            <label>Dates (Including Vehicle Transportation)</label>
                             <div className="selected-dates-display">
                                 {selectedDates.length > 0 ? (
                                     selectedDates.map(d => formatDateDisplay(d)).join(', ')
@@ -202,27 +225,68 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
 
                         <div className="booking-form-group">
                             <label>Who Ordered</label>
-                            <input type="text" name="who_ordered" disabled value={user?.email || 'Current User'} />
+                            <select
+                                value={whoOrderedMode}
+                                onChange={(e) => {
+                                    const mode = e.target.value
+                                    setWhoOrderedMode(mode)
+                                    if (mode === 'me') setWhoOrderedCustom('')
+                                }}
+                            >
+                                <option value="me">{userName}</option>
+                                <option value="others">Others</option>
+                            </select>
+                            {whoOrderedMode === 'others' && (
+                                <input
+                                    type="text"
+                                    value={whoOrderedCustom}
+                                    onChange={(e) => setWhoOrderedCustom(e.target.value)}
+                                    placeholder="Enter name"
+                                    className="booking-who-ordered-custom"
+                                />
+                            )}
                         </div>
 
                         <div className="booking-form-group">
                             <label>Pilot *</label>
                             <select name="pilot" value={formData.pilot} onChange={handleChange} required>
                                 <option value="">Select a pilot</option>
-                                {teamMembers.map(name => (
+                                {PILOT_OPTIONS.map(name => (
                                     <option key={name} value={name}>{name}</option>
                                 ))}
                             </select>
                         </div>
 
                         <div className="booking-form-group">
-                            <label>Project</label>
+                            <label>Project *</label>
                             <input
                                 type="text"
                                 name="project"
                                 value={formData.project}
                                 onChange={handleChange}
                                 placeholder="Project name"
+                                required
+                            />
+                        </div>
+
+                        <div className="booking-form-group">
+                            <label>Risk Level</label>
+                            <select name="risk_level" value={formData.risk_level} onChange={handleChange}>
+                                <option value="">Select level</option>
+                                {RISK_LEVEL_OPTIONS.map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="booking-form-group">
+                            <label>Location</label>
+                            <input
+                                type="text"
+                                name="location"
+                                value={formData.location}
+                                onChange={handleChange}
+                                placeholder="e.g. Lab, Outdoor Field, Customer Site"
                             />
                         </div>
 
@@ -247,6 +311,12 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                                 placeholder="Additional booking notes..."
                             />
                         </div>
+
+                        {conflictWarning && (
+                            <div className="booking-conflict-warning" role="alert">
+                                This slot is already booked by {conflictWarning.projectName}. Please coordinate with the owner.
+                            </div>
+                        )}
 
                         <div className="booking-modal-actions">
                             <button type="button" className="booking-btn-cancel" onClick={onClose}>

@@ -9,6 +9,8 @@ export const useAuth = () => useContext(AuthContext)
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null)
     const [role, setRole] = useState('viewer')
+    const [department, setDepartment] = useState('R&D')
+    const [displayName, setDisplayName] = useState(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -25,6 +27,8 @@ export const AuthProvider = ({ children }) => {
             if (session?.user) fetchProfile(session.user.id)
             else {
                 setRole('viewer')
+                setDepartment('R&D')
+                setDisplayName(null)
                 setLoading(false)
             }
         })
@@ -36,12 +40,14 @@ export const AuthProvider = ({ children }) => {
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('role, display_name, email')
+                .select('role, display_name, email, department')
                 .eq('id', userId)
                 .single()
 
             if (data) {
                 setRole(data.role || 'viewer')
+                setDepartment(data.department || 'R&D')
+                setDisplayName(data.display_name ?? null)
             }
         } catch (err) {
             console.error('Error fetching profile:', err)
@@ -86,10 +92,21 @@ export const AuthProvider = ({ children }) => {
     const signOut = async () => {
         await supabase.auth.signOut()
         setRole('viewer')
+        setDisplayName(null)
+    }
+
+    const updateDisplayName = async (newDisplayName) => {
+        if (!user?.id) return
+        const { error } = await supabase
+            .from('profiles')
+            .update({ display_name: newDisplayName || null })
+            .eq('id', user.id)
+        if (error) throw error
+        setDisplayName(newDisplayName || null)
     }
 
     return (
-        <AuthContext.Provider value={{ user, role: finalRole, loading, signUp, signIn, signInWithGoogle, signOut }}>
+        <AuthContext.Provider value={{ user, role: finalRole, department, displayName, loading, signUp, signIn, signInWithGoogle, signOut, updateDisplayName }}>
             {!loading && children}
         </AuthContext.Provider>
     )

@@ -1,41 +1,72 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import './CalendarOverviewModal.css'
 
 export default function CalendarOverviewModal({ onClose }) {
     const [currentMonth, setCurrentMonth] = useState(new Date())
+    const [bookings, setBookings] = useState([])
+    const [loading, setLoading] = useState(true)
 
-    // MOCK MODE: Simulated bookings data
-    const mockBookings = [
-        { vehicle: 'DQ-Alpha', project: 'Survey Mission Alpha', pilot: 'Michael', start_date: '2026-01-15', end_date: '2026-01-15' },
-        { vehicle: 'DQ-Beta', project: 'Training Exercise', pilot: 'Devon', start_date: '2026-01-16', end_date: '2026-01-17' },
-        { vehicle: 'DQ-Gamma', project: 'Field Test Gamma', pilot: 'Renzo', start_date: '2026-01-18', end_date: '2026-01-20' },
-        { vehicle: 'DQ-Alpha', project: 'Research Flight', pilot: 'Ezgi', start_date: '2026-01-22', end_date: '2026-01-22' },
-        { vehicle: 'DQ-Beta', project: 'Delivery Test', pilot: 'Jaco', start_date: '2026-01-25', end_date: '2026-01-26' },
-    ]
-
-    const getDaysInMonth = (date) => {
-        const year = date.getFullYear()
-        const month = date.getMonth()
+    // Monday = 0, Sunday = 6 (ISO-style; first day of week = Monday)
+    const { daysInMonth, startOffsetMonday, year, month } = (() => {
+        const year = currentMonth.getFullYear()
+        const month = currentMonth.getMonth()
         const firstDay = new Date(year, month, 1)
         const lastDay = new Date(year, month + 1, 0)
-        const daysInMonth = lastDay.getDate()
-        const startingDayOfWeek = firstDay.getDay()
-        return { daysInMonth, startingDayOfWeek, year, month }
-    }
+        const getDaySundayBased = firstDay.getDay()
+        const startOffsetMonday = (getDaySundayBased + 6) % 7
+        return {
+            daysInMonth: lastDay.getDate(),
+            startOffsetMonday,
+            year,
+            month
+        }
+    })()
+
+    useEffect(() => {
+        let cancelled = false
+        setLoading(true)
+        const monthStart = new Date(year, month, 1).toISOString()
+        const monthEnd = new Date(year, month, daysInMonth, 23, 59, 59).toISOString()
+        async function fetchBookings() {
+            const { data, error } = await supabase
+                .from('bookings')
+                .select('id, start_time, end_time, project_name, pilot_name, vehicle_id, vehicles(name)')
+                .lte('start_time', monthEnd)
+                .gte('end_time', monthStart)
+                .order('start_time', { ascending: true })
+            if (cancelled) return
+            if (error) {
+                setBookings([])
+                setLoading(false)
+                return
+            }
+            const mapped = (data || []).map(b => {
+                const v = b.vehicles
+                const vehicleName = (typeof v === 'object' && v?.name) ? v.name : (v || 'Vehicle')
+                return {
+                    vehicle: vehicleName,
+                    project: b.project_name ?? '',
+                    pilot: b.pilot_name ?? '',
+                    start_date: b.start_time?.slice(0, 10) ?? '',
+                    end_date: b.end_time?.slice(0, 10) ?? ''
+                }
+            })
+            setBookings(mapped)
+            setLoading(false)
+        }
+        fetchBookings()
+        return () => { cancelled = true }
+    }, [year, month, daysInMonth])
 
     const getBookingsForDate = (day) => {
-        const dateStr = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-            .toISOString().split('T')[0]
-
-        return mockBookings.filter(booking => {
-            const start = new Date(booking.start_date)
-            const end = new Date(booking.end_date)
-            const current = new Date(dateStr)
-            return current >= start && current <= end
+        const dateStr = new Date(year, month, day).toISOString().split('T')[0]
+        return bookings.filter(booking => {
+            const start = booking.start_date
+            const end = booking.end_date
+            return dateStr >= start && dateStr <= end
         })
     }
-
-    const { daysInMonth, startingDayOfWeek } = getDaysInMonth(currentMonth)
     const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
     const goToPrevMonth = () => {
@@ -63,11 +94,11 @@ export default function CalendarOverviewModal({ onClose }) {
                 {/* Header */}
                 <div className="calendar-overview-header">
                     <div className="calendar-overview-icon">📅</div>
-                    <div>
+                    <div className="calendar-overview-title-wrap">
                         <h2>Fleet Calendar Overview</h2>
                         <p className="calendar-overview-subtitle">Vehicle booking schedule</p>
                     </div>
-                    <button onClick={onClose} className="calendar-overview-close">×</button>
+                    <button type="button" onClick={onClose} className="calendar-overview-close" aria-label="Close">×</button>
                 </div>
 
                 {/* Calendar Controls */}
@@ -77,38 +108,32 @@ export default function CalendarOverviewModal({ onClose }) {
                     <button type="button" onClick={goToNextMonth}>Next ›</button>
                 </div>
 
-                {/* Calendar Grid */}
+                {/* Calendar Grid: header row Mon–Sun, then 6 rows of days (Monday first) */}
                 <div className="calendar-overview-grid">
-                    {/* Day Headers */}
-                    <div className="calendar-day-header">Sun</div>
                     <div className="calendar-day-header">Mon</div>
                     <div className="calendar-day-header">Tue</div>
                     <div className="calendar-day-header">Wed</div>
                     <div className="calendar-day-header">Thu</div>
                     <div className="calendar-day-header">Fri</div>
                     <div className="calendar-day-header">Sat</div>
-
-                    {/* Empty cells before month starts */}
-                    {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                        <div key={`empty-${i}`} className="calendar-day-cell empty" />
-                    ))}
-
-                    {/* Days of the month */}
-                    {Array.from({ length: daysInMonth }).map((_, i) => {
-                        const day = i + 1
-                        const bookings = getBookingsForDate(day)
-                        const hasBookings = bookings.length > 0
-
+                    <div className="calendar-day-header">Sun</div>
+                    {Array.from({ length: 6 * 7 }).map((_, cellIndex) => {
+                        const dayNum = cellIndex - startOffsetMonday + 1
+                        const isEmpty = dayNum < 1 || dayNum > daysInMonth
+                        if (isEmpty) {
+                            return <div key={`e-${cellIndex}`} className="calendar-day-cell empty" />
+                        }
+                        const dayBookings = getBookingsForDate(dayNum)
+                        const hasBookings = dayBookings.length > 0
                         return (
                             <div
-                                key={day}
-                                className={`calendar-day-cell ${isToday(day) ? 'today' : ''} ${hasBookings ? 'has-bookings' : ''}`}
+                                key={dayNum}
+                                className={`calendar-day-cell ${isToday(dayNum) ? 'today' : ''} ${hasBookings ? 'has-bookings' : ''}`}
                             >
-                                <div className="calendar-day-number">{day}</div>
-
+                                <div className="calendar-day-number">{dayNum}</div>
                                 {hasBookings && (
                                     <div className="calendar-day-bookings">
-                                        {bookings.map((booking, idx) => (
+                                        {dayBookings.map((booking, idx) => (
                                             <div
                                                 key={idx}
                                                 className="calendar-booking-chip"
@@ -124,6 +149,10 @@ export default function CalendarOverviewModal({ onClose }) {
                         )
                     })}
                 </div>
+
+                {loading && (
+                    <p className="calendar-loading">Loading bookings…</p>
+                )}
 
                 {/* Legend */}
                 <div className="calendar-overview-legend">

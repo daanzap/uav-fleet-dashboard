@@ -65,13 +65,11 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) 
                 </p>
             </div>
 
-            {/* Bookings Placeholder (Static for layout matching) */}
+            {/* Next booking */}
             <div className="booking-section">
-                {/* Check if we have booking info, otherwise show placeholder */}
                 {vehicle.next_booking ? (
                     <div className="booking-active">
-                        <span className="booking-date">{vehicle.next_booking.date}</span>
-                        <span className="booking-user">{vehicle.next_booking.user}</span>
+                        Next booking: {vehicle.next_booking.project || '—'} ({vehicle.next_booking.date || '—'})
                     </div>
                 ) : (
                     <div className="booking-empty">No active bookings</div>

@@ -1,7 +1,7 @@
-
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { ALLOWED_VEHICLE_NAMES } from '../lib/constants'
 import VehicleCard from '../components/VehicleCard'
 import BookingModal from '../components/BookingModal'
 import EditVehicleModal from '../components/EditVehicleModal'
@@ -36,15 +36,51 @@ export default function Dashboard() {
     const fetchVehicles = async () => {
         try {
             setLoading(true)
-            const { data, error } = await supabase
+            const { data: vehiclesData, error: vehiclesError } = await supabase
                 .from('vehicles')
                 .select('*')
                 .order('created_at', { ascending: false })
 
-            if (error) throw error
-            setVehicles(data || [])
+            if (vehiclesError) throw vehiclesError
+            const raw = vehiclesData || []
+
+            const allowedSet = new Set(ALLOWED_VEHICLE_NAMES)
+            const filtered = raw.filter(v => allowedSet.has(v.name))
+            const sorted = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+
+            if (sorted.length === 0) {
+                setVehicles([])
+                setLoading(false)
+                return
+            }
+
+            const vehicleIds = sorted.map(v => v.id)
+            const now = new Date().toISOString()
+            const { data: bookingsData } = await supabase
+                .from('bookings')
+                .select('id, vehicle_id, start_time, project_name')
+                .in('vehicle_id', vehicleIds)
+                .gte('start_time', now)
+                .order('start_time', { ascending: true })
+
+            const nextByVehicle = {}
+            for (const b of bookingsData || []) {
+                if (nextByVehicle[b.vehicle_id] == null) {
+                    const start = b.start_time ? new Date(b.start_time) : null
+                    nextByVehicle[b.vehicle_id] = {
+                        project: b.project_name ?? '',
+                        date: start ? start.toLocaleDateString(undefined, { dateStyle: 'medium' }) : '',
+                    }
+                }
+            }
+
+            setVehicles(sorted.map(v => ({
+                ...v,
+                next_booking: nextByVehicle[v.id] || null,
+            })))
         } catch (error) {
             console.error('Error fetching vehicles:', error)
+            setVehicles([])
         } finally {
             setLoading(false)
         }
@@ -70,7 +106,11 @@ export default function Dashboard() {
                 {loading ? (
                     <p>Loading fleet data...</p>
                 ) : (
-                    <div className="vehicle-grid">
+                    <>
+                        <section className="dashboard-fleet-section" aria-label="Fleet vehicles">
+                            <h2 className="dashboard-fleet-title">Fleet</h2>
+                        </section>
+                        <div className="vehicle-grid">
                         {filteredVehicles.map(vehicle => (
                             <VehicleCard
                                 key={vehicle.id}
@@ -85,7 +125,8 @@ export default function Dashboard() {
                                 No vehicles found matching "{searchQuery}"
                             </p>
                         )}
-                    </div>
+                        </div>
+                    </>
                 )}
             </div>
 

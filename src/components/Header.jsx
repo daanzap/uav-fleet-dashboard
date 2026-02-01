@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import CalendarOverviewModal from './CalendarOverviewModal'
+import logoSrc from '../assets/logo.png'
 
 export default function Header({ title }) {
     const { user, role, signOut } = useAuth()
     const [showMenu, setShowMenu] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
+    const [showCalendarModal, setShowCalendarModal] = useState(false)
     const menuRef = useRef(null)
     const navigate = useNavigate()
 
@@ -52,15 +55,10 @@ export default function Header({ title }) {
         <header className="dashboard-header">
             <div className="title-section" onClick={() => navigate('/')}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ color: '#f97316', fontSize: '1.5rem' }}>⚡</span> {/* Logo placeholder */}
-                    <div>
-                        <h1 style={{ fontSize: '1.4rem', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', margin: 0 }}>
-                            DQ Vehicle Dashboard
-                        </h1>
-                        <div style={{ fontSize: '0.7rem', color: '#64748b', letterSpacing: '1.5px', marginTop: '4px', fontWeight: '600' }}>
-                            R&D FIELD OPERATIONS UNIT // SECTOR 7
-                        </div>
-                    </div>
+                    <img src={logoSrc} alt="DQ" style={{ height: '2rem', width: 'auto', display: 'block' }} />
+                    <h1 style={{ fontSize: '1.4rem', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', margin: 0 }}>
+                        DQ VEHICLE DASHBOARD
+                    </h1>
                 </div>
             </div>
 
@@ -81,9 +79,9 @@ export default function Header({ title }) {
                     </div>
                 )}
 
-                {/* Settings Button (Ref match) */}
-                <div className="icon-btn-header" title="Settings">
-                    ⚙️
+                {/* Calendar Button */}
+                <div className="icon-btn-header" title="Calendar" onClick={() => setShowCalendarModal(true)}>
+                    📅
                 </div>
 
                 {/* Add Vehicle Button (Ref match) */}
@@ -122,6 +120,10 @@ export default function Header({ title }) {
                     )}
                 </div>
             </div>
+
+            {showCalendarModal && (
+                <CalendarOverviewModal onClose={() => setShowCalendarModal(false)} />
+            )}
         </header>
     )
 }

@@ -247,11 +247,22 @@ export const db = {
      * Check if there are conflicting bookings in the time period
      */
     async checkBookingConflict(vehicleId, startTime, endTime, excludeBookingId = null) {
+        const conflict = await this.getConflictBooking(vehicleId, startTime, endTime, excludeBookingId)
+        return !!conflict
+    },
+
+    /**
+     * Get first conflicting booking (for Soft Lock toast: project name)
+     * Overlap: existing.start_time <= endTime AND existing.end_time >= startTime
+     */
+    async getConflictBooking(vehicleId, startTime, endTime, excludeBookingId = null) {
         let query = supabase
             .from('bookings')
-            .select('id')
+            .select('id, project_name')
             .eq('vehicle_id', vehicleId)
-            .or(`and(start_time.lte.${endTime},end_time.gte.${startTime})`)
+            .lte('start_time', endTime)
+            .gte('end_time', startTime)
+            .limit(1)
 
         if (excludeBookingId) {
             query = query.neq('id', excludeBookingId)
@@ -259,8 +270,7 @@ export const db = {
 
         const { data, error } = await query
         if (error) throw error
-
-        return data && data.length > 0
+        return data && data[0] ? data[0] : null
     },
 
     /**
