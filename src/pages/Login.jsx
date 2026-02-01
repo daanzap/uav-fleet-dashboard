@@ -1,12 +1,12 @@
 import { useAuth } from '../contexts/AuthContext'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 // Feature flag: Set to true to enable email/password authentication
 const ENABLE_EMAIL_AUTH = false
 
 export default function Login() {
-    const { signIn, signUp, signInWithGoogle } = useAuth()
+    const { signIn, signUp, signInWithGoogle, user } = useAuth()
     const navigate = useNavigate()
     const [loading, setLoading] = useState(false)
     const [email, setEmail] = useState('')
@@ -14,6 +14,14 @@ export default function Login() {
     const [isSignUp, setIsSignUp] = useState(false)
     const [message, setMessage] = useState('')
     const [robotChecked, setRobotChecked] = useState(false)
+
+    // If user is already logged in (OAuth callback succeeded), redirect to dashboard
+    useEffect(() => {
+        if (user) {
+            console.log('User logged in, redirecting to dashboard')
+            navigate('/', { replace: true })
+        }
+    }, [user, navigate])
 
     // Password validation logic
     const validatePassword = (pass) => {

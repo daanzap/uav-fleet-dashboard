@@ -15,21 +15,36 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         // Check active session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(({ data: { session }, error }) => {
+            if (error) {
+                console.error('Session error:', error)
+                // Clear hash to prevent infinite loop
+                if (window.location.hash) {
+                    window.history.replaceState(null, '', window.location.pathname)
+                }
+            }
             setUser(session?.user ?? null)
             if (session?.user) fetchProfile(session.user.id)
             else setLoading(false)
         })
 
         // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null)
-            if (session?.user) fetchProfile(session.user.id)
-            else {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth event:', event, 'Session:', !!session)
+            
+            if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+                setUser(null)
                 setRole('viewer')
                 setDepartment('R&D')
                 setDisplayName(null)
                 setLoading(false)
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                setUser(session?.user ?? null)
+                if (session?.user) fetchProfile(session.user.id)
+            } else if (event === 'INITIAL_SESSION') {
+                setUser(session?.user ?? null)
+                if (session?.user) fetchProfile(session.user.id)
+                else setLoading(false)
             }
         })
 
