@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Remove base path for Vercel deployment (deploys to root domain)
-  // If you need subdirectory deployment, set base: '/your-path/' only for that environment
+  // Use base path for GitHub Pages, root for Vercel
+  base: process.env.VERCEL ? '/' : '/uav-fleet-dashboard/',
   test: {
     globals: true,
     environment: 'jsdom',
