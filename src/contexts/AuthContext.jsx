@@ -14,23 +14,36 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        let mounted = true
+        
         // Check active session and handle OAuth callback
         supabase.auth.getSession().then(({ data: { session }, error }) => {
+            if (!mounted) return
+            
             if (error) {
                 console.error('Auth session error:', error)
                 // Clear hash to prevent infinite loop on error
-                if (window.location.hash) {
-                    console.log('Clearing invalid auth hash')
+                if (window.location.hash && window.location.hash.includes('error')) {
+                    console.log('Clearing error auth hash')
                     window.history.replaceState(null, '', window.location.pathname)
                 }
+                setLoading(false)
+                return
             }
+            
+            console.log('Initial session check:', !!session)
             setUser(session?.user ?? null)
-            if (session?.user) fetchProfile(session.user.id)
-            else setLoading(false)
+            if (session?.user) {
+                fetchProfile(session.user.id)
+            } else {
+                setLoading(false)
+            }
         })
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (!mounted) return
+            
             console.log('Auth event:', event, 'Session:', !!session)
             
             if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
@@ -41,15 +54,23 @@ export const AuthProvider = ({ children }) => {
                 setLoading(false)
             } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 setUser(session?.user ?? null)
-                if (session?.user) fetchProfile(session.user.id)
+                if (session?.user) {
+                    fetchProfile(session.user.id)
+                    // Clear the hash after successful sign in to prevent re-processing
+                    if (window.location.hash) {
+                        window.history.replaceState(null, '', window.location.pathname)
+                    }
+                }
             } else if (event === 'INITIAL_SESSION') {
-                setUser(session?.user ?? null)
-                if (session?.user) fetchProfile(session.user.id)
-                else setLoading(false)
+                // This event is handled by getSession above
+                // Don't set loading to false here to avoid race condition
             }
         })
 
-        return () => subscription.unsubscribe()
+        return () => {
+            mounted = false
+            subscription.unsubscribe()
+        }
     }, [])
 
     const fetchProfile = async (userId) => {
@@ -96,17 +117,23 @@ export const AuthProvider = ({ children }) => {
     }
 
     const signInWithGoogle = async () => {
-        // Build the full redirect URL including the base path
-        const baseUrl = import.meta.env.BASE_URL || '/'
-        const redirectUrl = `${window.location.origin}${baseUrl === '/' ? '' : baseUrl}`
+        // Use the current origin as redirect URL
+        // This ensures it works on both localhost and Vercel
+        const redirectUrl = window.location.origin
+        
+        console.log('Initiating Google OAuth with redirect:', redirectUrl)
         
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: redirectUrl
+                redirectTo: redirectUrl,
+                skipBrowserRedirect: false
             }
         })
-        if (error) console.error('Error signing in:', error)
+        if (error) {
+            console.error('Error signing in with Google:', error)
+            throw error
+        }
     }
 
     const signOut = async () => {
