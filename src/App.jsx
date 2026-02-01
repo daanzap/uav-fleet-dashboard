@@ -26,7 +26,7 @@ function PrivateRoute({ children, adminOnly = false }) {
 
 function AppRoutes() {
   return (
-    <Router basename={import.meta.env.BASE_URL}>
+    <Router>
       <Routes>
         <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
 
