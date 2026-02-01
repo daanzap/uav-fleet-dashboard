@@ -57,7 +57,14 @@ function AppRoutes() {
 
 function PublicOnlyRoute({ children }) {
   const { user, loading } = useAuth()
-  if (!loading && user) return <Navigate to="/" replace />
+  
+  // Show loading while checking auth state
+  if (loading) return <div className="loading-screen">Initialize Fleet Systems...</div>
+  
+  // If user is logged in, redirect to dashboard
+  if (user) return <Navigate to="/" replace />
+  
+  // Otherwise show login page
   return children
 }
 

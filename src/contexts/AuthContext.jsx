@@ -80,10 +80,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     const signInWithGoogle = async () => {
+        // Build the full redirect URL including the base path
+        const baseUrl = import.meta.env.BASE_URL || '/'
+        const redirectUrl = `${window.location.origin}${baseUrl === '/' ? '' : baseUrl}`
+        
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin + import.meta.env.BASE_URL
+                redirectTo: redirectUrl
             }
         })
         if (error) console.error('Error signing in:', error)
