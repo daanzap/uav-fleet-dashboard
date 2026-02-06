@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 // Feature flag: Set to true to enable email/password authentication
-const ENABLE_EMAIL_AUTH = false
+const ENABLE_EMAIL_AUTH = false  // Disabled - Google OAuth only
 
 export default function Login() {
     const { signIn, signUp, signInWithGoogle, user } = useAuth()

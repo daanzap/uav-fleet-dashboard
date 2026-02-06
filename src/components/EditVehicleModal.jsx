@@ -2,10 +2,12 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { isValidVehicleName, DEPARTMENT_PREFIXES } from '../lib/constants'
+import { logChange } from '../lib/changeLogger'
 import './EditVehicleModal.css'
 
 export default function EditVehicleModal({ vehicle, onClose, onSave }) {
-    const { user } = useAuth()
+    const { user, displayName } = useAuth()
     const isNew = !vehicle?.id
 
     // Hardware config: plain text for now (no JSON); backward compat for existing object/JSON
@@ -21,7 +23,6 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
     const [formData, setFormData] = useState({
         name: vehicle?.name || '',
         status: vehicle?.status || 'Available',
-        risk_level: vehicle?.risk_level || 'low',
         hw_config: getInitialHwConfig(),
         sw_version: vehicle?.sw_version || '',
         notes: vehicle?.notes || '',
@@ -39,9 +40,35 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        
+        // Optional: Validate vehicle name format (soft validation - shows warning but allows proceed)
+        if (!isValidVehicleName(formData.name)) {
+            const confirmed = window.confirm(
+                `⚠️ Vehicle name "${formData.name}" doesn't follow the standard naming convention.\n\n` +
+                `Expected format: [Department]-[Identifier]\n` +
+                `Examples:\n` +
+                `  • RD-117 (R&D Department)\n` +
+                `  • Training-933 (Pilot Training)\n` +
+                `  • Marketing-001 (Marketing)\n\n` +
+                `Do you want to continue anyway?`
+            )
+            if (!confirmed) return
+        }
+        
         setLoading(true)
 
         try {
+            // For updates, fetch current vehicle data for before snapshot
+            let beforeData = null
+            if (!isNew) {
+                const { data: currentVehicle } = await supabase
+                    .from('vehicles')
+                    .select('*')
+                    .eq('id', vehicle.id)
+                    .single()
+                beforeData = currentVehicle
+            }
+
             // Store hw_config as plain text in JSONB (single key) for now; format may change later
             const hwConfigValue = formData.hw_config.trim()
                 ? { raw: formData.hw_config }
@@ -50,7 +77,6 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
             const payload = {
                 name: formData.name,
                 status: formData.status,
-                risk_level: formData.risk_level,
                 hw_config: hwConfigValue,
                 sw_version: formData.sw_version,
                 notes: formData.notes,
@@ -71,6 +97,19 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                 user_id: user.id,
                 action_type: 'status_change',
                 content: isNew ? `Created vehicle ${data.name}` : `Updated vehicle details`
+            })
+
+            // Log the change to change_logs table
+            await logChange({
+                entityType: 'vehicle',
+                entityId: data.id,
+                entityName: data.name,
+                actionType: isNew ? 'create' : 'update',
+                beforeData: beforeData,
+                afterData: data,
+                userId: user.id,
+                userEmail: user.email,
+                displayName: displayName || user.email
             })
 
             onClose()
@@ -105,6 +144,23 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="edit-modal-form">
+                    {/* Naming Convention Guide */}
+                    <div style={{ 
+                        background: '#f0f9ff', 
+                        border: '1px solid #bae6fd',
+                        padding: '12px', 
+                        borderRadius: '6px',
+                        marginBottom: '16px',
+                        fontSize: '0.9em'
+                    }}>
+                        <strong style={{ color: '#0369a1' }}>📝 Naming Convention:</strong>
+                        <div style={{ marginTop: '8px', color: '#0c4a6e', lineHeight: '1.6' }}>
+                            <div>• <strong>R&D:</strong> RD-117, RD-125, RD-High Altitude</div>
+                            <div>• <strong>Training:</strong> Training-933, Training_TBD</div>
+                            <div>• <strong>Marketing:</strong> Marketing-001 (future)</div>
+                        </div>
+                    </div>
+
                     {/* Vehicle Name */}
                     <div className="edit-form-group">
                         <label>Vehicle Name</label>
@@ -113,32 +169,23 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                             required
                             value={formData.name}
                             onChange={handleChange}
-                            placeholder="e.g. DQ-Alpha"
+                            placeholder="e.g. RD-117, Training-933, Marketing-001"
                         />
+                        <small style={{ color: '#64748b', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                            Format: [Department]-[Identifier or Description]
+                        </small>
                     </div>
 
-                    {/* Status & Risk Level Row */}
-                    <div className="edit-form-row">
-                        <div className="edit-form-group">
-                            <label>Status</label>
-                            <div className="edit-select-wrapper">
-                                <select name="status" value={formData.status} onChange={handleChange}>
-                                    <option value="Available">✓ Available</option>
-                                    <option value="Mission">🚀 On Mission</option>
-                                    <option value="Maintenance">⚠️ Maintenance</option>
-                                    <option value="Decommissioned">🚫 Decommissioned</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div className="edit-form-group">
-                            <label>Risk Level</label>
-                            <div className="edit-select-wrapper">
-                                <select name="risk_level" value={formData.risk_level} onChange={handleChange}>
-                                    <option value="low">🟢 Low</option>
-                                    <option value="middle">🟡 Medium</option>
-                                    <option value="high">🔴 High</option>
-                                </select>
-                            </div>
+                    {/* Status */}
+                    <div className="edit-form-group">
+                        <label>Status</label>
+                        <div className="edit-select-wrapper">
+                            <select name="status" value={formData.status} onChange={handleChange}>
+                                <option value="Available">✓ Available</option>
+                                <option value="Mission">🚀 On Mission</option>
+                                <option value="Maintenance">⚠️ Maintenance</option>
+                                <option value="Decommissioned">🚫 Decommissioned</option>
+                            </select>
                         </div>
                     </div>
 

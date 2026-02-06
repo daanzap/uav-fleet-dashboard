@@ -76,11 +76,20 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) 
                 )}
             </div>
 
-            {/* Action Button */}
+            {/* Action Buttons */}
             <div className="card-footer">
                 <button className="btn-book-now" onClick={() => onBook(vehicle)}>
                     <span style={{ marginRight: '6px' }}>📝</span> BOOK NOW
                 </button>
+                {onViewHistory && (
+                    <button 
+                        className="btn-view-history" 
+                        onClick={() => onViewHistory(vehicle)}
+                        title="View Change History"
+                    >
+                        📜 History
+                    </button>
+                )}
             </div>
         </div>
     )

@@ -117,9 +117,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     const signInWithGoogle = async () => {
-        // Use the current origin as redirect URL
-        // This ensures it works on both localhost and Vercel
-        const redirectUrl = window.location.origin
+        // Build redirect URL with proper base path
+        // In dev: http://localhost:5174/uav-fleet-dashboard/
+        // In prod (Vercel): https://your-domain.vercel.app/
+        const basePath = import.meta.env.BASE_URL || '/'
+        const redirectUrl = window.location.origin + basePath
         
         console.log('Initiating Google OAuth with redirect:', redirectUrl)
         

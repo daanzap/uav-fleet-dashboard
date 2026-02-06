@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { ALLOWED_VEHICLE_NAMES } from '../lib/constants'
 import VehicleCard from '../components/VehicleCard'
 import BookingModal from '../components/BookingModal'
 import EditVehicleModal from '../components/EditVehicleModal'
 import ActivityLogModal from '../components/ActivityLog'
+import ChangeHistoryModal from '../components/ChangeHistoryModal'
 
 import Header from '../components/Header'
 
@@ -19,6 +19,7 @@ export default function Dashboard() {
     const [bookingVehicle, setBookingVehicle] = useState(null)
     const [editingVehicle, setEditingVehicle] = useState(null) // null = closed, {} = new, obj = edit
     const [historyVehicle, setHistoryVehicle] = useState(null)
+    const [changeHistoryVehicle, setChangeHistoryVehicle] = useState(null)
 
     useEffect(() => {
         fetchVehicles()
@@ -44,9 +45,8 @@ export default function Dashboard() {
             if (vehiclesError) throw vehiclesError
             const raw = vehiclesData || []
 
-            const allowedSet = new Set(ALLOWED_VEHICLE_NAMES)
-            const filtered = raw.filter(v => allowedSet.has(v.name))
-            const sorted = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+            // Sort all vehicles alphabetically by name (no filtering)
+            const sorted = [...raw].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
 
             if (sorted.length === 0) {
                 setVehicles([])
@@ -54,6 +54,7 @@ export default function Dashboard() {
                 return
             }
 
+            // Fetch upcoming bookings for all vehicles
             const vehicleIds = sorted.map(v => v.id)
             const now = new Date().toISOString()
             const { data: bookingsData } = await supabase
@@ -63,6 +64,7 @@ export default function Dashboard() {
                 .gte('start_time', now)
                 .order('start_time', { ascending: true })
 
+            // Map next booking to each vehicle
             const nextByVehicle = {}
             for (const b of bookingsData || []) {
                 if (nextByVehicle[b.vehicle_id] == null) {
@@ -117,7 +119,7 @@ export default function Dashboard() {
                                 vehicle={vehicle}
                                 onEdit={setEditingVehicle}
                                 onBook={setBookingVehicle}
-                                onViewHistory={setHistoryVehicle}
+                                onViewHistory={setChangeHistoryVehicle}
                             />
                         ))}
                         {filteredVehicles.length === 0 && (
@@ -149,6 +151,15 @@ export default function Dashboard() {
 
             {historyVehicle && (
                 <ActivityLogModal vehicle={historyVehicle} onClose={() => setHistoryVehicle(null)} />
+            )}
+
+            {changeHistoryVehicle && (
+                <ChangeHistoryModal
+                    entityType="vehicle"
+                    entityId={changeHistoryVehicle.id}
+                    entityName={changeHistoryVehicle.name}
+                    onClose={() => setChangeHistoryVehicle(null)}
+                />
             )}
         </div>
     )

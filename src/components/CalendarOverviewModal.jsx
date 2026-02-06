@@ -31,7 +31,7 @@ export default function CalendarOverviewModal({ onClose }) {
         async function fetchBookings() {
             const { data, error } = await supabase
                 .from('bookings')
-                .select('id, start_time, end_time, project_name, pilot_name, vehicle_id, vehicles(name)')
+                .select('id, start_time, end_time, project_name, pilot_name, who_ordered, vehicle_id, vehicles(name)')
                 .lte('start_time', monthEnd)
                 .gte('end_time', monthStart)
                 .order('start_time', { ascending: true })
@@ -48,6 +48,7 @@ export default function CalendarOverviewModal({ onClose }) {
                     vehicle: vehicleName,
                     project: b.project_name ?? '',
                     pilot: b.pilot_name ?? '',
+                    who_ordered: b.who_ordered ?? '',
                     start_date: b.start_time?.slice(0, 10) ?? '',
                     end_date: b.end_time?.slice(0, 10) ?? ''
                 }
@@ -137,7 +138,7 @@ export default function CalendarOverviewModal({ onClose }) {
                                             <div
                                                 key={idx}
                                                 className="calendar-booking-chip"
-                                                title={`${booking.vehicle} - ${booking.project} (${booking.pilot})`}
+                                                title={`${booking.vehicle} - ${booking.project}\nOrdered by: ${booking.who_ordered || 'Unknown'}\nPilot: ${booking.pilot || 'TBD'}`}
                                             >
                                                 <span className="booking-vehicle">{booking.vehicle}</span>
                                                 <span className="booking-project">{booking.project}</span>

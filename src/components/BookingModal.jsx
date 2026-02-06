@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { PILOT_OPTIONS } from '../lib/constants'
 import db from '../lib/database'
+import { logChange } from '../lib/changeLogger'
 import './BookingModal.css'
 
 const RISK_LEVEL_OPTIONS = ['Low', 'Medium', 'High']
@@ -108,6 +109,13 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
             const start_time = new Date(startDate + 'T00:00:00Z').toISOString()
             const end_time = new Date(endDate + 'T23:59:59Z').toISOString()
 
+            // Fetch current vehicle hardware config for snapshot
+            const { data: vehicleData } = await supabase
+                .from('vehicles')
+                .select('hw_config')
+                .eq('id', vehicle.id)
+                .single()
+
             const bookingData = {
                 vehicle_id: vehicle.id,
                 user_id: user.id,
@@ -120,12 +128,15 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                 duration: formData.duration || null,
                 notes: formData.notes || null,
                 who_ordered: whoOrderedValue || userName || user?.email || null,
-                status: 'confirmed'
+                status: 'confirmed',
+                snapshotted_hw_config: vehicleData?.hw_config || null
             }
 
-            const { error } = await supabase
+            const { data: newBooking, error } = await supabase
                 .from('bookings')
                 .insert(bookingData)
+                .select()
+                .single()
 
             if (error) throw error
 
@@ -134,6 +145,20 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                 user_id: user.id,
                 action_type: 'booking',
                 content: `Booked ${vehicle.name} for ${formData.pilot} (${selectedDates[0]} to ${selectedDates[selectedDates.length - 1]})`
+            })
+
+            // Log the booking creation to change_logs table
+            await logChange({
+                entityType: 'booking',
+                entityId: newBooking.id,
+                entityName: formData.project || `Booking for ${vehicle.name}`,
+                actionType: 'create',
+                beforeData: null,
+                afterData: newBooking,
+                userId: user.id,
+                userEmail: user.email,
+                displayName: displayName || user.email,
+                notes: `Booked ${vehicle.name} from ${startDate} to ${endDate}`
             })
 
             alert('Booking created successfully!')

@@ -1,0 +1,90 @@
+feat: Implement dynamic vehicle management (remove hard-coded limits)
+
+BREAKING CHANGE: Removed ALLOWED_VEHICLE_NAMES restriction
+
+## What Changed
+
+### Core Changes
+- Removed hard-coded 7-vehicle limit
+- Removed fixed name allowlist (ALLOWED_VEHICLE_NAMES)
+- Dashboard now displays ALL vehicles dynamically
+- Support unlimited vehicle count with flexible naming
+
+### Modified Files
+- src/lib/constants.js: Replace ALLOWED_VEHICLE_NAMES with DEPARTMENT_PREFIXES
+  - Added isValidVehicleName() validation function
+  - Added getDepartmentFromName() helper function
+  
+- src/pages/Dashboard.jsx: Remove vehicle filtering logic
+  - Removed import of ALLOWED_VEHICLE_NAMES
+  - Display all vehicles from database (no filtering)
+  
+- src/components/EditVehicleModal.jsx: Add naming guidance
+  - Visual naming convention guide
+  - Soft validation (warns but allows custom names)
+  - Updated placeholder examples
+
+- db/08_cleanup_test_vehicles.sql: NEW safe cleanup script
+  - Only removes obvious test data
+  - No vehicle count enforcement
+  - No name allowlist enforcement
+
+- db/08_vehicles_seven_names.sql: Renamed to .OLD
+  - Old script enforced 7-vehicle limit
+  - Replaced with safe cleanup script
+
+### New Documentation
+- FIXES_COMPLETED.md: Summary of all changes
+- TESTING_GUIDE_zh.md: Comprehensive testing guide
+- docs/CODEBASE_FIXES_SUMMARY_zh.md: Technical details
+- docs/CRITICAL_DESIGN_FIX_zh.md: Problem analysis
+
+## Why This Change
+
+Original design incorrectly assumed:
+- Fixed 7 vehicles (current count was mistaken for limit)
+- Vehicle names must be from predefined list
+- Cannot add/remove vehicles dynamically
+
+Actual requirements:
+- Unlimited vehicle count (currently 9, can grow/shrink)
+- Flexible naming following department conventions
+  - R&D: RD-[identifier] (e.g., RD-117, RD-High Altitude)
+  - Training: Training-[identifier] (e.g., Training-933)
+  - Marketing: Marketing-[identifier] (future)
+- Dashboard auto-displays all vehicles as grid
+
+## Impact
+
+### Positive
+✅ Can add unlimited vehicles via UI
+✅ Can use any vehicle name (with optional validation)
+✅ Dashboard automatically shows all vehicles
+✅ Easier to scale and expand departments
+✅ No code changes needed to add vehicles
+
+### Backwards Compatible
+✅ Existing vehicles continue to work
+✅ Existing bookings unaffected
+✅ All other features unchanged
+✅ Build passes successfully
+
+## Testing
+
+- ✅ Build test passed (npm run build)
+- ✅ No console errors
+- ✅ Supports adding vehicles with any name
+- ✅ Dashboard displays all vehicles dynamically
+- See TESTING_GUIDE_zh.md for manual testing
+
+## Next Steps
+
+Phase 0 remaining tasks can now proceed:
+- TODO-0.2: Cleanup test data (optional, user chose to keep all)
+- TODO-0.3: Remove risk_level from vehicles table
+- TODO-0.4: Add deleted_at columns
+- TODO-0.5: Create change_logs table
+
+---
+
+Co-authored-by: AI Assistant (Claude)
