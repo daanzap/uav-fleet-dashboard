@@ -50,14 +50,12 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) 
                     🚀
                 </div>
                 <div className="id-text">
-                    <span className="unit-label">UNIT IDENTIFIER</span>
                     <h2 className="unit-id">{vehicle.name}</h2>
                 </div>
             </div>
 
             {/* Details */}
             <div className="card-main-info">
-                <h3 className="vehicle-name">{vehicle.name}</h3>
                 <p className="vehicle-desc">
                     {vehicle.type} • {vehicle.sw_version ? `v${vehicle.sw_version}` : 'No SW info'}
                     <br />
@@ -79,17 +77,8 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) 
             {/* Action Buttons */}
             <div className="card-footer">
                 <button className="btn-book-now" onClick={() => onBook(vehicle)}>
-                    <span style={{ marginRight: '6px' }}>📝</span> BOOK NOW
+                    <span style={{ marginRight: '6px' }}>📝</span> RESERVE
                 </button>
-                {onViewHistory && (
-                    <button 
-                        className="btn-view-history" 
-                        onClick={() => onViewHistory(vehicle)}
-                        title="View Change History"
-                    >
-                        📜 History
-                    </button>
-                )}
             </div>
         </div>
     )

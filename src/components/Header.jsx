@@ -108,6 +108,15 @@ export default function Header({ title }) {
                             </div>
                             <button className="profile-menu-item" onClick={handleProfileClick}>👤 Profile Page</button>
                             <button
+                                className="profile-menu-item"
+                                onClick={() => {
+                                    alert('Change Log feature - Design TBD\n\nThis will show a comprehensive history of all system changes.')
+                                    setShowMenu(false)
+                                }}
+                            >
+                                📜 Change Log
+                            </button>
+                            <button
                                 className={`profile-menu-item ${role === 'admin' ? '' : 'disabled'}`}
                                 onClick={handleAdminClick}
                                 style={{ opacity: role === 'admin' ? 1 : 0.5, cursor: role === 'admin' ? 'pointer' : 'default', display: 'flex', justifyContent: 'space-between' }}

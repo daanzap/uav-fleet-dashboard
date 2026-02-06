@@ -6,6 +6,7 @@ export default function CalendarOverviewModal({ onClose }) {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [bookings, setBookings] = useState([])
     const [loading, setLoading] = useState(true)
+    const [selectedBooking, setSelectedBooking] = useState(null)
 
     // Monday = 0, Sunday = 6 (ISO-style; first day of week = Monday)
     const { daysInMonth, startOffsetMonday, year, month } = (() => {
@@ -31,7 +32,7 @@ export default function CalendarOverviewModal({ onClose }) {
         async function fetchBookings() {
             const { data, error } = await supabase
                 .from('bookings')
-                .select('id, start_time, end_time, project_name, pilot_name, who_ordered, vehicle_id, vehicles(name)')
+                .select('id, start_time, end_time, project_name, pilot_name, who_ordered, location, duration, notes, risk_level, vehicle_id, vehicles(name)')
                 .lte('start_time', monthEnd)
                 .gte('end_time', monthStart)
                 .order('start_time', { ascending: true })
@@ -45,10 +46,15 @@ export default function CalendarOverviewModal({ onClose }) {
                 const v = b.vehicles
                 const vehicleName = (typeof v === 'object' && v?.name) ? v.name : (v || 'Vehicle')
                 return {
+                    id: b.id,
                     vehicle: vehicleName,
                     project: b.project_name ?? '',
                     pilot: b.pilot_name ?? '',
                     who_ordered: b.who_ordered ?? '',
+                    location: b.location ?? '',
+                    duration: b.duration ?? '',
+                    notes: b.notes ?? '',
+                    risk_level: b.risk_level ?? '',
                     start_date: b.start_time?.slice(0, 10) ?? '',
                     end_date: b.end_time?.slice(0, 10) ?? ''
                 }
@@ -138,7 +144,12 @@ export default function CalendarOverviewModal({ onClose }) {
                                             <div
                                                 key={idx}
                                                 className="calendar-booking-chip"
-                                                title={`${booking.vehicle} - ${booking.project}\nOrdered by: ${booking.who_ordered || 'Unknown'}\nPilot: ${booking.pilot || 'TBD'}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setSelectedBooking(booking)
+                                                }}
+                                                style={{ cursor: 'pointer' }}
+                                                title="Click for details"
                                             >
                                                 <span className="booking-vehicle">{booking.vehicle}</span>
                                                 <span className="booking-project">{booking.project}</span>
@@ -167,6 +178,119 @@ export default function CalendarOverviewModal({ onClose }) {
                     </div>
                 </div>
             </div>
+
+            {/* Booking Details Popup */}
+            {selectedBooking && (
+                <div 
+                    className="booking-details-overlay" 
+                    onClick={() => setSelectedBooking(null)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10000
+                    }}
+                >
+                    <div 
+                        className="booking-details-card"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: '#1e293b',
+                            borderRadius: '12px',
+                            padding: '24px',
+                            maxWidth: '400px',
+                            width: '90%',
+                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                            border: '1px solid #334155'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#fff' }}>📋 Booking Details</h3>
+                            <button 
+                                onClick={() => setSelectedBooking(null)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#94a3b8',
+                                    fontSize: '1.5rem',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    lineHeight: 1
+                                }}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        
+                        <div style={{ display: 'grid', gap: '12px' }}>
+                            <div>
+                                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Vehicle</div>
+                                <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '600' }}>{selectedBooking.vehicle}</div>
+                            </div>
+                            
+                            <div>
+                                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Project</div>
+                                <div style={{ color: '#fff' }}>{selectedBooking.project || '—'}</div>
+                            </div>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Start Date</div>
+                                    <div style={{ color: '#fff' }}>{selectedBooking.start_date}</div>
+                                </div>
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>End Date</div>
+                                    <div style={{ color: '#fff' }}>{selectedBooking.end_date}</div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Pilot</div>
+                                <div style={{ color: '#fff' }}>{selectedBooking.pilot || '—'}</div>
+                            </div>
+                            
+                            <div>
+                                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Ordered By</div>
+                                <div style={{ color: '#fff' }}>{selectedBooking.who_ordered || 'Unknown'}</div>
+                            </div>
+                            
+                            {selectedBooking.location && (
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Location</div>
+                                    <div style={{ color: '#fff' }}>{selectedBooking.location}</div>
+                                </div>
+                            )}
+                            
+                            {selectedBooking.duration && (
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Duration</div>
+                                    <div style={{ color: '#fff' }}>{selectedBooking.duration}</div>
+                                </div>
+                            )}
+                            
+                            {selectedBooking.risk_level && (
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Risk Level</div>
+                                    <div style={{ color: '#fff' }}>{selectedBooking.risk_level}</div>
+                                </div>
+                            )}
+                            
+                            {selectedBooking.notes && (
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Notes</div>
+                                    <div style={{ color: '#cbd5e1', fontSize: '0.95rem', fontStyle: 'italic' }}>{selectedBooking.notes}</div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

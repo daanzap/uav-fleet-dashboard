@@ -33,12 +33,40 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
 
     // Calendar state
     const [currentMonth, setCurrentMonth] = useState(new Date())
+    const [existingBookings, setExistingBookings] = useState([])
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
     const whoOrderedValue = whoOrderedMode === 'others' ? whoOrderedCustom : userName
+
+    // Fetch existing bookings for this vehicle to show in calendar
+    useEffect(() => {
+        async function fetchExistingBookings() {
+            const year = currentMonth.getFullYear()
+            const month = currentMonth.getMonth()
+            const monthStart = new Date(year, month, 1).toISOString()
+            const monthEnd = new Date(year, month + 1, 0, 23, 59, 59).toISOString()
+            
+            const { data, error } = await supabase
+                .from('bookings')
+                .select('start_time, end_time, project_name')
+                .eq('vehicle_id', vehicle.id)
+                .lte('start_time', monthEnd)
+                .gte('end_time', monthStart)
+            
+            if (!error && data) {
+                const bookings = data.map(b => ({
+                    start_date: b.start_time?.slice(0, 10) ?? '',
+                    end_date: b.end_time?.slice(0, 10) ?? '',
+                    project: b.project_name ?? ''
+                }))
+                setExistingBookings(bookings)
+            }
+        }
+        fetchExistingBookings()
+    }, [vehicle.id, currentMonth])
 
     // Soft Lock: check conflict when dates change so user sees warning before submitting
     useEffect(() => {
@@ -84,6 +112,14 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         const dateStr = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
             .toISOString().split('T')[0]
         return selectedDates.includes(dateStr)
+    }
+
+    const getBookingForDate = (day) => {
+        const dateStr = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+            .toISOString().split('T')[0]
+        return existingBookings.find(booking => 
+            dateStr >= booking.start_date && dateStr <= booking.end_date
+        )
     }
 
     const formatDateDisplay = (dateStr) => {
@@ -190,11 +226,11 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         <div className="booking-modal-overlay" onClick={onClose}>
             <div className="booking-modal-container" onClick={handleModalClick}>
                 {/* Header */}
-                <div className="booking-modal-header">
+<div className="booking-modal-header">
                     <div className="booking-modal-icon">📅</div>
                     <div>
-                        <h2>Book Vehicle</h2>
-                        <p className="booking-modal-subtitle">Reserve: {vehicle.name}</p>
+                        <h2>Reserve Vehicle</h2>
+                        <p className="booking-modal-subtitle">Reserving: {vehicle.name}</p>
                     </div>
                     <button onClick={onClose} className="booking-modal-close">×</button>
                 </div>
@@ -222,13 +258,29 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
 
                             {Array.from({ length: daysInMonth }).map((_, i) => {
                                 const day = i + 1
+                                const booking = getBookingForDate(day)
+                                const hasBooking = !!booking
                                 return (
                                     <div
                                         key={day}
-                                        className={`calendar-day ${isDateSelected(day) ? 'selected' : ''}`}
+                                        className={`calendar-day ${isDateSelected(day) ? 'selected' : ''} ${hasBooking ? 'has-booking' : ''}`}
                                         onClick={() => handleDateClick(day)}
+                                        title={hasBooking ? `Already booked: ${booking.project}` : ''}
                                     >
-                                        {day}
+                                        <div>{day}</div>
+                                        {hasBooking && (
+                                            <div style={{ 
+                                                fontSize: '0.65rem', 
+                                                color: '#f59e0b', 
+                                                marginTop: '2px',
+                                                fontWeight: '600',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                {booking.project.slice(0, 8)}
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })}
@@ -348,7 +400,7 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                                 Cancel
                             </button>
                             <button type="submit" className="booking-btn-confirm" disabled={loading}>
-                                {loading ? '⏳ Booking...' : '✓ Confirm Booking'}
+                                {loading ? '⏳ Reserving...' : '✓ Confirm Reservation'}
                             </button>
                         </div>
                     </form>

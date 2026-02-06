@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { isValidVehicleName, DEPARTMENT_PREFIXES } from '../lib/constants'
 import { logChange } from '../lib/changeLogger'
 import './EditVehicleModal.css'
 
@@ -25,8 +24,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
         status: vehicle?.status || 'Available',
         hw_config: getInitialHwConfig(),
         sw_version: vehicle?.sw_version || '',
-        notes: vehicle?.notes || '',
-        department: vehicle?.department || 'R&D'
+        notes: vehicle?.notes || ''
     })
     const [loading, setLoading] = useState(false)
 
@@ -40,21 +38,6 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        
-        // Optional: Validate vehicle name format (soft validation - shows warning but allows proceed)
-        if (!isValidVehicleName(formData.name)) {
-            const confirmed = window.confirm(
-                `⚠️ Vehicle name "${formData.name}" doesn't follow the standard naming convention.\n\n` +
-                `Expected format: [Department]-[Identifier]\n` +
-                `Examples:\n` +
-                `  • RD-117 (R&D Department)\n` +
-                `  • Training-933 (Pilot Training)\n` +
-                `  • Marketing-001 (Marketing)\n\n` +
-                `Do you want to continue anyway?`
-            )
-            if (!confirmed) return
-        }
-        
         setLoading(true)
 
         try {
@@ -79,8 +62,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                 status: formData.status,
                 hw_config: hwConfigValue,
                 sw_version: formData.sw_version,
-                notes: formData.notes,
-                department: formData.department
+                notes: formData.notes
             }
             if (!isNew) payload.id = vehicle.id
 
@@ -144,23 +126,6 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="edit-modal-form">
-                    {/* Naming Convention Guide */}
-                    <div style={{ 
-                        background: '#f0f9ff', 
-                        border: '1px solid #bae6fd',
-                        padding: '12px', 
-                        borderRadius: '6px',
-                        marginBottom: '16px',
-                        fontSize: '0.9em'
-                    }}>
-                        <strong style={{ color: '#0369a1' }}>📝 Naming Convention:</strong>
-                        <div style={{ marginTop: '8px', color: '#0c4a6e', lineHeight: '1.6' }}>
-                            <div>• <strong>R&D:</strong> RD-117, RD-125, RD-High Altitude</div>
-                            <div>• <strong>Training:</strong> Training-933, Training_TBD</div>
-                            <div>• <strong>Marketing:</strong> Marketing-001 (future)</div>
-                        </div>
-                    </div>
-
                     {/* Vehicle Name */}
                     <div className="edit-form-group">
                         <label>Vehicle Name</label>
@@ -169,11 +134,8 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                             required
                             value={formData.name}
                             onChange={handleChange}
-                            placeholder="e.g. RD-117, Training-933, Marketing-001"
+                            placeholder="e.g. RD-117, Training-933"
                         />
-                        <small style={{ color: '#64748b', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
-                            Format: [Department]-[Identifier or Description]
-                        </small>
                     </div>
 
                     {/* Status */}
@@ -185,18 +147,6 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                                 <option value="Mission">🚀 On Mission</option>
                                 <option value="Maintenance">⚠️ Maintenance</option>
                                 <option value="Decommissioned">🚫 Decommissioned</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Department */}
-                    <div className="edit-form-group">
-                        <label>Department</label>
-                        <div className="edit-select-wrapper">
-                            <select name="department" value={formData.department} onChange={handleChange}>
-                                <option value="R&D">R&D</option>
-                                <option value="Training">Training</option>
-                                <option value="Marketing">Marketing</option>
                             </select>
                         </div>
                     </div>
