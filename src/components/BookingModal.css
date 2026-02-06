@@ -253,6 +253,20 @@
     margin-top: 0.5rem;
 }
 
+/* Conflict Checking Indicator */
+.booking-conflict-checking {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    color: #93c5fd;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
 /* Enhanced Conflict Warning */
 .booking-conflict-enhanced {
     background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(239, 68, 68, 0.1));

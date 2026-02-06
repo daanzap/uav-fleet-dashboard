@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PILOT_OPTIONS } from '../lib/constants'
 import db from '../lib/database'
 import { logChange } from '../lib/changeLogger'
+import { InlineSpinner } from './LoadingSkeleton'
 import './BookingModal.css'
 
 const RISK_LEVEL_OPTIONS = ['Low', 'Medium', 'High']
@@ -33,6 +34,7 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
     const [conflictingBookings, setConflictingBookings] = useState([])
     const [showOverrideDialog, setShowOverrideDialog] = useState(false)
     const [overrideConfirmed, setOverrideConfirmed] = useState(false)
+    const [checkingConflicts, setCheckingConflicts] = useState(false)
 
     // Calendar state
     const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -76,8 +78,11 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         if (selectedDates.length === 0) {
             setConflictWarning(null)
             setConflictingBookings([])
+            setCheckingConflicts(false)
             return
         }
+        
+        setCheckingConflicts(true)
         const start_time = new Date(selectedDates[0] + 'T00:00:00Z').toISOString()
         const end_time = new Date(selectedDates[selectedDates.length - 1] + 'T23:59:59Z').toISOString()
         
@@ -94,6 +99,9 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
             .catch(() => {
                 setConflictWarning(null)
                 setConflictingBookings([])
+            })
+            .finally(() => {
+                setCheckingConflicts(false)
             })
     }, [vehicle.id, selectedDates.join(',')])
 
@@ -443,8 +451,16 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                             />
                         </div>
 
+                        {/* Conflict Check Loading */}
+                        {checkingConflicts && (
+                            <div className="booking-conflict-checking">
+                                <InlineSpinner />
+                                <span>Checking for conflicts...</span>
+                            </div>
+                        )}
+
                         {/* Enhanced Conflict Warning */}
-                        {conflictWarning && conflictingBookings.length > 0 && (
+                        {!checkingConflicts && conflictWarning && conflictingBookings.length > 0 && (
                             <div className="booking-conflict-enhanced" role="alert">
                                 <div className="conflict-header">
                                     <div className="conflict-icon">⚠️</div>
@@ -513,8 +529,15 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                             <button type="button" className="booking-btn-cancel" onClick={onClose}>
                                 Cancel
                             </button>
-                            <button type="submit" className="booking-btn-confirm" disabled={loading}>
-                                {loading ? '⏳ Reserving...' : '✓ Confirm Reservation'}
+                            <button type="submit" className="booking-btn-confirm" disabled={loading || checkingConflicts}>
+                                {loading ? (
+                                    <>
+                                        <InlineSpinner />
+                                        Reserving...
+                                    </>
+                                ) : (
+                                    '✓ Confirm Reservation'
+                                )}
                             </button>
                         </div>
                     </form>

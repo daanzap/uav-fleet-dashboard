@@ -6,6 +6,7 @@ import BookingModal from '../components/BookingModal'
 import EditVehicleModal from '../components/EditVehicleModal'
 import ActivityLogModal from '../components/ActivityLog'
 import ChangeHistoryModal from '../components/ChangeHistoryModal'
+import { DashboardSkeleton } from '../components/LoadingSkeleton'
 
 import Header from '../components/Header'
 
@@ -105,14 +106,14 @@ export default function Dashboard() {
             <Header />
 
             <div className="dashboard-content">
+                <section className="dashboard-fleet-section" aria-label="Fleet vehicles">
+                    <h2 className="dashboard-fleet-title">Fleet</h2>
+                </section>
+                
                 {loading ? (
-                    <p>Loading fleet data...</p>
+                    <DashboardSkeleton count={6} />
                 ) : (
-                    <>
-                        <section className="dashboard-fleet-section" aria-label="Fleet vehicles">
-                            <h2 className="dashboard-fleet-title">Fleet</h2>
-                        </section>
-                        <div className="vehicle-grid">
+                    <div className="vehicle-grid fade-in">
                         {filteredVehicles.map(vehicle => (
                             <VehicleCard
                                 key={vehicle.id}
@@ -127,8 +128,7 @@ export default function Dashboard() {
                                 No vehicles found matching "{searchQuery}"
                             </p>
                         )}
-                        </div>
-                    </>
+                    </div>
                 )}
             </div>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { CalendarGridSkeleton, LoadingSpinner } from './LoadingSkeleton'
 import './CalendarOverviewModal.css'
 
 export default function CalendarOverviewModal({ onClose }) {
@@ -116,54 +117,54 @@ export default function CalendarOverviewModal({ onClose }) {
                 </div>
 
                 {/* Calendar Grid: header row Mon–Sun, then 6 rows of days (Monday first) */}
-                <div className="calendar-overview-grid">
-                    <div className="calendar-day-header">Mon</div>
-                    <div className="calendar-day-header">Tue</div>
-                    <div className="calendar-day-header">Wed</div>
-                    <div className="calendar-day-header">Thu</div>
-                    <div className="calendar-day-header">Fri</div>
-                    <div className="calendar-day-header">Sat</div>
-                    <div className="calendar-day-header">Sun</div>
-                    {Array.from({ length: 6 * 7 }).map((_, cellIndex) => {
-                        const dayNum = cellIndex - startOffsetMonday + 1
-                        const isEmpty = dayNum < 1 || dayNum > daysInMonth
-                        if (isEmpty) {
-                            return <div key={`e-${cellIndex}`} className="calendar-day-cell empty" />
-                        }
-                        const dayBookings = getBookingsForDate(dayNum)
-                        const hasBookings = dayBookings.length > 0
-                        return (
-                            <div
-                                key={dayNum}
-                                className={`calendar-day-cell ${isToday(dayNum) ? 'today' : ''} ${hasBookings ? 'has-bookings' : ''}`}
-                            >
-                                <div className="calendar-day-number">{dayNum}</div>
-                                {hasBookings && (
-                                    <div className="calendar-day-bookings">
-                                        {dayBookings.map((booking, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="calendar-booking-chip"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setSelectedBooking(booking)
-                                                }}
-                                                style={{ cursor: 'pointer' }}
-                                                title="Click for details"
-                                            >
-                                                <span className="booking-vehicle">{booking.vehicle}</span>
-                                                <span className="booking-project">{booking.project}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )
-                    })}
-                </div>
-
-                {loading && (
-                    <p className="calendar-loading">Loading bookings…</p>
+                {loading ? (
+                    <CalendarGridSkeleton />
+                ) : (
+                    <div className="calendar-overview-grid fade-in">
+                        <div className="calendar-day-header">Mon</div>
+                        <div className="calendar-day-header">Tue</div>
+                        <div className="calendar-day-header">Wed</div>
+                        <div className="calendar-day-header">Thu</div>
+                        <div className="calendar-day-header">Fri</div>
+                        <div className="calendar-day-header">Sat</div>
+                        <div className="calendar-day-header">Sun</div>
+                        {Array.from({ length: 6 * 7 }).map((_, cellIndex) => {
+                            const dayNum = cellIndex - startOffsetMonday + 1
+                            const isEmpty = dayNum < 1 || dayNum > daysInMonth
+                            if (isEmpty) {
+                                return <div key={`e-${cellIndex}`} className="calendar-day-cell empty" />
+                            }
+                            const dayBookings = getBookingsForDate(dayNum)
+                            const hasBookings = dayBookings.length > 0
+                            return (
+                                <div
+                                    key={dayNum}
+                                    className={`calendar-day-cell ${isToday(dayNum) ? 'today' : ''} ${hasBookings ? 'has-bookings' : ''}`}
+                                >
+                                    <div className="calendar-day-number">{dayNum}</div>
+                                    {hasBookings && (
+                                        <div className="calendar-day-bookings">
+                                            {dayBookings.map((booking, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="calendar-booking-chip"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setSelectedBooking(booking)
+                                                    }}
+                                                    style={{ cursor: 'pointer' }}
+                                                    title="Click for details"
+                                                >
+                                                    <span className="booking-vehicle">{booking.vehicle}</span>
+                                                    <span className="booking-project">{booking.project}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
                 )}
 
                 {/* Legend */}
