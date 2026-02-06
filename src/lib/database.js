@@ -258,7 +258,7 @@ export const db = {
     async getConflictBooking(vehicleId, startTime, endTime, excludeBookingId = null) {
         let query = supabase
             .from('bookings')
-            .select('id, project_name')
+            .select('id, project_name, pilot_name, start_time, end_time, who_ordered, location, duration, notes, user_id')
             .eq('vehicle_id', vehicleId)
             .lte('start_time', endTime)
             .gte('end_time', startTime)
@@ -271,6 +271,28 @@ export const db = {
         const { data, error } = await query
         if (error) throw error
         return data && data[0] ? data[0] : null
+    },
+
+    /**
+     * Get ALL conflicting bookings with detailed information
+     * Used for enhanced conflict detection UI
+     */
+    async getAllConflictingBookings(vehicleId, startTime, endTime, excludeBookingId = null) {
+        let query = supabase
+            .from('bookings')
+            .select('id, project_name, pilot_name, start_time, end_time, who_ordered, location, duration, notes, user_id')
+            .eq('vehicle_id', vehicleId)
+            .lte('start_time', endTime)
+            .gte('end_time', startTime)
+            .order('start_time', { ascending: true })
+
+        if (excludeBookingId) {
+            query = query.neq('id', excludeBookingId)
+        }
+
+        const { data, error } = await query
+        if (error) throw error
+        return data || []
     },
 
     /**

@@ -30,6 +30,9 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
     })
     const [loading, setLoading] = useState(false)
     const [conflictWarning, setConflictWarning] = useState(null)
+    const [conflictingBookings, setConflictingBookings] = useState([])
+    const [showOverrideDialog, setShowOverrideDialog] = useState(false)
+    const [overrideConfirmed, setOverrideConfirmed] = useState(false)
 
     // Calendar state
     const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -68,19 +71,30 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         fetchExistingBookings()
     }, [vehicle.id, currentMonth])
 
-    // Soft Lock: check conflict when dates change so user sees warning before submitting
+    // Enhanced conflict detection: check for ALL conflicting bookings when dates change
     useEffect(() => {
         if (selectedDates.length === 0) {
             setConflictWarning(null)
+            setConflictingBookings([])
             return
         }
         const start_time = new Date(selectedDates[0] + 'T00:00:00Z').toISOString()
         const end_time = new Date(selectedDates[selectedDates.length - 1] + 'T23:59:59Z').toISOString()
-        db.getConflictBooking(vehicle.id, start_time, end_time)
-            .then(conflict => {
-                setConflictWarning(conflict ? { projectName: conflict.project_name || 'another booking' } : null)
+        
+        db.getAllConflictingBookings(vehicle.id, start_time, end_time)
+            .then(conflicts => {
+                if (conflicts && conflicts.length > 0) {
+                    setConflictWarning({ count: conflicts.length })
+                    setConflictingBookings(conflicts)
+                } else {
+                    setConflictWarning(null)
+                    setConflictingBookings([])
+                }
             })
-            .catch(() => setConflictWarning(null))
+            .catch(() => {
+                setConflictWarning(null)
+                setConflictingBookings([])
+            })
     }, [vehicle.id, selectedDates.join(',')])
 
     // Calendar functions
@@ -129,11 +143,51 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         return `${month}/${day}`
     }
 
+    const formatDateTimeFull = (isoString) => {
+        const date = new Date(isoString)
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const year = date.getFullYear()
+        return `${month}/${day}/${year}`
+    }
+
+    const calculateOverlapDays = (conflict) => {
+        const conflictStart = new Date(conflict.start_time)
+        const conflictEnd = new Date(conflict.end_time)
+        const selectedStart = new Date(selectedDates[0] + 'T00:00:00Z')
+        const selectedEnd = new Date(selectedDates[selectedDates.length - 1] + 'T23:59:59Z')
+        
+        const overlapStart = new Date(Math.max(conflictStart.getTime(), selectedStart.getTime()))
+        const overlapEnd = new Date(Math.min(conflictEnd.getTime(), selectedEnd.getTime()))
+        
+        const days = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1
+        return days
+    }
+
+    const handleOverrideConfirm = () => {
+        setShowOverrideDialog(false)
+        setOverrideConfirmed(true)
+        // Trigger form submission after state update
+        setTimeout(() => {
+            document.getElementById('booking-form').requestSubmit()
+        }, 0)
+    }
+
+    const handleOverrideCancel = () => {
+        setShowOverrideDialog(false)
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
 
         if (selectedDates.length === 0) {
             alert('Please select at least one date')
+            return
+        }
+
+        // If there are conflicts and user hasn't confirmed override, show dialog
+        if (conflictingBookings.length > 0 && !overrideConfirmed) {
+            setShowOverrideDialog(true)
             return
         }
 
@@ -288,7 +342,7 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                     </div>
 
                     {/* Right: Form */}
-                    <form onSubmit={handleSubmit} className="booking-form-section">
+                    <form id="booking-form" onSubmit={handleSubmit} className="booking-form-section">
                         <div className="booking-form-group">
                             <label>Dates (Including Vehicle Transportation)</label>
                             <div className="selected-dates-display">
@@ -389,9 +443,69 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                             />
                         </div>
 
-                        {conflictWarning && (
-                            <div className="booking-conflict-warning" role="alert">
-                                This slot is already booked by {conflictWarning.projectName}. Please coordinate with the owner.
+                        {/* Enhanced Conflict Warning */}
+                        {conflictWarning && conflictingBookings.length > 0 && (
+                            <div className="booking-conflict-enhanced" role="alert">
+                                <div className="conflict-header">
+                                    <div className="conflict-icon">⚠️</div>
+                                    <div>
+                                        <div className="conflict-title">
+                                            Booking Conflict Detected
+                                        </div>
+                                        <div className="conflict-subtitle">
+                                            {conflictingBookings.length} conflicting {conflictingBookings.length === 1 ? 'booking' : 'bookings'} found
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="conflict-list">
+                                    {conflictingBookings.map((conflict, idx) => (
+                                        <div key={conflict.id} className="conflict-item">
+                                            <div className="conflict-item-header">
+                                                <span className="conflict-badge">Conflict {idx + 1}</span>
+                                                <span className="conflict-overlap">
+                                                    {calculateOverlapDays(conflict)} day{calculateOverlapDays(conflict) > 1 ? 's' : ''} overlap
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="conflict-details">
+                                                <div className="conflict-detail-row">
+                                                    <span className="conflict-label">📋 Project:</span>
+                                                    <span className="conflict-value">{conflict.project_name || 'Unnamed Project'}</span>
+                                                </div>
+                                                <div className="conflict-detail-row">
+                                                    <span className="conflict-label">👤 Pilot:</span>
+                                                    <span className="conflict-value">{conflict.pilot_name || 'Not specified'}</span>
+                                                </div>
+                                                <div className="conflict-detail-row">
+                                                    <span className="conflict-label">📅 Dates:</span>
+                                                    <span className="conflict-value">
+                                                        {formatDateTimeFull(conflict.start_time)} - {formatDateTimeFull(conflict.end_time)}
+                                                    </span>
+                                                </div>
+                                                {conflict.who_ordered && (
+                                                    <div className="conflict-detail-row">
+                                                        <span className="conflict-label">🎯 Ordered by:</span>
+                                                        <span className="conflict-value">{conflict.who_ordered}</span>
+                                                    </div>
+                                                )}
+                                                {conflict.location && (
+                                                    <div className="conflict-detail-row">
+                                                        <span className="conflict-label">📍 Location:</span>
+                                                        <span className="conflict-value">{conflict.location}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <div className="conflict-footer">
+                                    <span className="conflict-footer-icon">💡</span>
+                                    <span className="conflict-footer-text">
+                                        Please coordinate with the booking owner before proceeding, or select different dates.
+                                    </span>
+                                </div>
                             </div>
                         )}
 
@@ -405,6 +519,61 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                         </div>
                     </form>
                 </div>
+
+                {/* Override Confirmation Dialog */}
+                {showOverrideDialog && (
+                    <div className="override-dialog-overlay" onClick={handleOverrideCancel}>
+                        <div className="override-dialog" onClick={(e) => e.stopPropagation()}>
+                            <div className="override-dialog-header">
+                                <div className="override-dialog-icon">⚠️</div>
+                                <h3>Confirm Booking Override</h3>
+                            </div>
+                            
+                            <div className="override-dialog-body">
+                                <p className="override-warning">
+                                    You are about to create a booking that conflicts with {conflictingBookings.length} existing {conflictingBookings.length === 1 ? 'booking' : 'bookings'}.
+                                </p>
+                                
+                                <div className="override-conflict-summary">
+                                    <strong>Conflicting bookings:</strong>
+                                    <ul>
+                                        {conflictingBookings.map((conflict, idx) => (
+                                            <li key={conflict.id}>
+                                                <strong>{conflict.project_name || 'Unnamed Project'}</strong>
+                                                <br />
+                                                <span className="override-conflict-detail">
+                                                    {formatDateTimeFull(conflict.start_time)} - {formatDateTimeFull(conflict.end_time)}
+                                                    {conflict.who_ordered && ` • Ordered by: ${conflict.who_ordered}`}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                
+                                <p className="override-question">
+                                    Have you coordinated with the booking owner(s)?
+                                </p>
+                            </div>
+                            
+                            <div className="override-dialog-actions">
+                                <button 
+                                    type="button" 
+                                    className="override-btn-cancel"
+                                    onClick={handleOverrideCancel}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="override-btn-confirm"
+                                    onClick={handleOverrideConfirm}
+                                >
+                                    Yes, Create Booking Anyway
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )
