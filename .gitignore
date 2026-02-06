@@ -15,8 +15,11 @@ dist-ssr
 
 # Database backups (contain sensitive data)
 backups/
-*.sql
 *.dump
+
+# Exception: Keep migration scripts in db/ folder
+# (We ignore *.sql by default but allow db/*.sql)
+# Note: db/ folder contains version-controlled migration scripts
 
 # Editor directories and files
 .vscode/*
