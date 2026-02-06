@@ -30,6 +30,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
         notes: vehicle?.notes || ''
     })
     const [loading, setLoading] = useState(false)
+    const [validationErrors, setValidationErrors] = useState({})
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -37,10 +38,42 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
             ...prev,
             [name]: value
         }))
+        
+        // Clear validation error for this field
+        if (validationErrors[name]) {
+            setValidationErrors(prev => {
+                const newErrors = { ...prev }
+                delete newErrors[name]
+                return newErrors
+            })
+        }
+    }
+    
+    // Real-time validation
+    const validateForm = () => {
+        const errors = {}
+        
+        if (!formData.name || formData.name.trim() === '') {
+            errors.name = 'Vehicle name is required'
+        }
+        
+        if (!formData.status) {
+            errors.status = 'Status is required'
+        }
+        
+        setValidationErrors(errors)
+        return Object.keys(errors).length === 0
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        
+        // Validate form
+        if (!validateForm()) {
+            showError('Please fill in all required fields')
+            return
+        }
+        
         setLoading(true)
 
         try {
@@ -116,6 +149,26 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
     const handleModalClick = (e) => {
         e.stopPropagation()
     }
+    
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose()
+            }
+        }
+        
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
+    
+    // Focus management - focus first input on mount
+    useEffect(() => {
+        const firstInput = document.querySelector('.edit-modal-container input[name="name"]')
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100)
+        }
+    }, [])
 
     return (
         <div className="edit-modal-overlay" onClick={onClose}>
@@ -137,27 +190,43 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                 <form onSubmit={handleSubmit} className="edit-modal-form">
                     {/* Vehicle Name */}
                     <div className="edit-form-group">
-                        <label>Vehicle Name</label>
+                        <label>Vehicle Name *</label>
                         <input
                             name="name"
                             required
                             value={formData.name}
                             onChange={handleChange}
                             placeholder="e.g. RD-117, Training-933"
+                            className={validationErrors.name ? 'error' : ''}
+                            aria-invalid={!!validationErrors.name}
+                            aria-describedby={validationErrors.name ? 'name-error' : undefined}
                         />
+                        {validationErrors.name && (
+                            <span id="name-error" className="validation-error">{validationErrors.name}</span>
+                        )}
                     </div>
 
                     {/* Status */}
                     <div className="edit-form-group">
-                        <label>Status</label>
+                        <label>Status *</label>
                         <div className="edit-select-wrapper">
-                            <select name="status" value={formData.status} onChange={handleChange}>
+                            <select 
+                                name="status" 
+                                value={formData.status} 
+                                onChange={handleChange}
+                                className={validationErrors.status ? 'error' : ''}
+                                aria-invalid={!!validationErrors.status}
+                                aria-describedby={validationErrors.status ? 'status-error' : undefined}
+                            >
                                 <option value="Available">✓ Available</option>
                                 <option value="Mission">🚀 On Mission</option>
                                 <option value="Maintenance">⚠️ Maintenance</option>
                                 <option value="Decommissioned">🚫 Decommissioned</option>
                             </select>
                         </div>
+                        {validationErrors.status && (
+                            <span id="status-error" className="validation-error">{validationErrors.status}</span>
+                        )}
                     </div>
 
                     {/* Hardware Config: plain text for now (format may change later) */}

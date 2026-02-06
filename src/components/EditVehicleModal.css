@@ -242,6 +242,29 @@
     transform: none;
 }
 
+/* Validation Errors */
+.edit-form-group input.error,
+.edit-form-group select.error,
+.edit-form-group textarea.error {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.edit-form-group input.error:focus,
+.edit-form-group select.error:focus,
+.edit-form-group textarea.error:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.validation-error {
+    display: block;
+    color: #fca5a5;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 560px) {
     .edit-modal-container {

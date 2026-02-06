@@ -247,6 +247,30 @@
     cursor: not-allowed;
 }
 
+/* Validation Errors */
+.booking-form-group input.error,
+.booking-form-group select.error,
+.booking-form-group textarea.error,
+.selected-dates-display.error {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.booking-form-group input.error:focus,
+.booking-form-group select.error:focus,
+.booking-form-group textarea.error:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.validation-error {
+    display: block;
+    color: #fca5a5;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
 .booking-who-ordered-custom {
     width: 100%;
     box-sizing: border-box;

@@ -42,9 +42,42 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
     // Calendar state
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [existingBookings, setExistingBookings] = useState([])
+    
+    // Validation state
+    const [validationErrors, setValidationErrors] = useState({})
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value })
+        const { name, value } = e.target
+        setFormData({ ...formData, [name]: value })
+        
+        // Clear validation error for this field
+        if (validationErrors[name]) {
+            setValidationErrors(prev => {
+                const newErrors = { ...prev }
+                delete newErrors[name]
+                return newErrors
+            })
+        }
+    }
+    
+    // Real-time validation
+    const validateForm = () => {
+        const errors = {}
+        
+        if (selectedDates.length === 0) {
+            errors.dates = 'Please select at least one date'
+        }
+        
+        if (!formData.pilot) {
+            errors.pilot = 'Pilot is required'
+        }
+        
+        if (!formData.project || formData.project.trim() === '') {
+            errors.project = 'Project name is required'
+        }
+        
+        setValidationErrors(errors)
+        return Object.keys(errors).length === 0
     }
 
     const whoOrderedValue = whoOrderedMode === 'others' ? whoOrderedCustom : userName
@@ -187,12 +220,38 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
     const handleOverrideCancel = () => {
         setShowOverrideDialog(false)
     }
+    
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // ESC to close modal
+            if (e.key === 'Escape' && !showOverrideDialog) {
+                onClose()
+            }
+            // ESC to close override dialog
+            if (e.key === 'Escape' && showOverrideDialog) {
+                handleOverrideCancel()
+            }
+        }
+        
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [showOverrideDialog])
+    
+    // Focus management - focus first input on mount
+    useEffect(() => {
+        const firstInput = document.querySelector('.booking-form-section select[name="pilot"]')
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100)
+        }
+    }, [])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        if (selectedDates.length === 0) {
-            showError('Please select at least one date')
+        // Validate form
+        if (!validateForm()) {
+            showError('Please fill in all required fields')
             return
         }
 
@@ -360,14 +419,17 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                     {/* Right: Form */}
                     <form id="booking-form" onSubmit={handleSubmit} className="booking-form-section">
                         <div className="booking-form-group">
-                            <label>Dates (Including Vehicle Transportation)</label>
-                            <div className="selected-dates-display">
+                            <label>Dates (Including Vehicle Transportation) *</label>
+                            <div className={`selected-dates-display ${validationErrors.dates ? 'error' : ''}`}>
                                 {selectedDates.length > 0 ? (
                                     selectedDates.map(d => formatDateDisplay(d)).join(', ')
                                 ) : (
                                     <span style={{ color: '#64748b' }}>Select dates from calendar</span>
                                 )}
                             </div>
+                            {validationErrors.dates && (
+                                <span className="validation-error">{validationErrors.dates}</span>
+                            )}
                         </div>
 
                         <div className="booking-form-group">
@@ -396,12 +458,23 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
 
                         <div className="booking-form-group">
                             <label>Pilot *</label>
-                            <select name="pilot" value={formData.pilot} onChange={handleChange} required>
+                            <select 
+                                name="pilot" 
+                                value={formData.pilot} 
+                                onChange={handleChange} 
+                                required
+                                className={validationErrors.pilot ? 'error' : ''}
+                                aria-invalid={!!validationErrors.pilot}
+                                aria-describedby={validationErrors.pilot ? 'pilot-error' : undefined}
+                            >
                                 <option value="">Select a pilot</option>
                                 {PILOT_OPTIONS.map(name => (
                                     <option key={name} value={name}>{name}</option>
                                 ))}
                             </select>
+                            {validationErrors.pilot && (
+                                <span id="pilot-error" className="validation-error">{validationErrors.pilot}</span>
+                            )}
                         </div>
 
                         <div className="booking-form-group">
@@ -413,7 +486,13 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                                 onChange={handleChange}
                                 placeholder="Project name"
                                 required
+                                className={validationErrors.project ? 'error' : ''}
+                                aria-invalid={!!validationErrors.project}
+                                aria-describedby={validationErrors.project ? 'project-error' : undefined}
                             />
+                            {validationErrors.project && (
+                                <span id="project-error" className="validation-error">{validationErrors.project}</span>
+                            )}
                         </div>
 
                         <div className="booking-form-group">
