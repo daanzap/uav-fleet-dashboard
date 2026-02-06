@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../components/Toast'
+import { handleError } from '../lib/errorHandler'
 import VehicleCard from '../components/VehicleCard'
 import BookingModal from '../components/BookingModal'
 import EditVehicleModal from '../components/EditVehicleModal'
@@ -12,6 +14,7 @@ import Header from '../components/Header'
 
 export default function Dashboard() {
     const { user, role } = useAuth()
+    const { showError } = useToast()
     const [vehicles, setVehicles] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
@@ -83,6 +86,11 @@ export default function Dashboard() {
             })))
         } catch (error) {
             console.error('Error fetching vehicles:', error)
+            const errorDetails = await handleError(error, 'Dashboard.fetchVehicles', {
+                userId: user?.id,
+                userEmail: user?.email
+            })
+            showError(errorDetails.message)
             setVehicles([])
         } finally {
             setLoading(false)

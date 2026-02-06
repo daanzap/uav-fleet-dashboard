@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from './Toast'
+import { handleError } from '../lib/errorHandler'
 import { PILOT_OPTIONS } from '../lib/constants'
 import db from '../lib/database'
 import { logChange } from '../lib/changeLogger'
@@ -16,6 +18,7 @@ function emailLocalPart(email) {
 
 export default function BookingModal({ vehicle, onClose, onSave }) {
     const { user, displayName } = useAuth()
+    const { showSuccess, showError } = useToast()
     const userName = displayName ?? emailLocalPart(user?.email) ?? 'Current User'
     const [selectedDates, setSelectedDates] = useState([])
     const [whoOrderedMode, setWhoOrderedMode] = useState('me') // 'me' | 'others'
@@ -189,7 +192,7 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         e.preventDefault()
 
         if (selectedDates.length === 0) {
-            alert('Please select at least one date')
+            showError('Please select at least one date')
             return
         }
 
@@ -259,11 +262,16 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                 notes: `Booked ${vehicle.name} from ${startDate} to ${endDate}`
             })
 
-            alert('Booking created successfully!')
+            showSuccess(`Booking created successfully for ${vehicle.name}!`)
             onClose()
             if (onSave) onSave()
         } catch (err) {
-            alert('Error creating booking: ' + err.message)
+            const errorDetails = await handleError(err, 'BookingModal.save', {
+                userId: user.id,
+                userEmail: user.email,
+                displayName: displayName || user.email
+            })
+            showError(errorDetails.message)
         } finally {
             setLoading(false)
         }

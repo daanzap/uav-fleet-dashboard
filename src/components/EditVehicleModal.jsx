@@ -2,11 +2,14 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from './Toast'
+import { handleError } from '../lib/errorHandler'
 import { logChange } from '../lib/changeLogger'
 import './EditVehicleModal.css'
 
 export default function EditVehicleModal({ vehicle, onClose, onSave }) {
     const { user, displayName } = useAuth()
+    const { showSuccess, showError } = useToast()
     const isNew = !vehicle?.id
 
     // Hardware config: plain text for now (no JSON); backward compat for existing object/JSON
@@ -94,10 +97,16 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                 displayName: displayName || user.email
             })
 
+            showSuccess(isNew ? `Vehicle "${data.name}" created successfully!` : `Vehicle "${data.name}" updated successfully!`)
             onClose()
             if (onSave) onSave()
         } catch (err) {
-            alert('Error saving vehicle: ' + err.message)
+            const errorDetails = await handleError(err, 'EditVehicleModal.save', {
+                userId: user.id,
+                userEmail: user.email,
+                displayName: displayName || user.email
+            })
+            showError(errorDetails.message)
         } finally {
             setLoading(false)
         }
