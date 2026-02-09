@@ -168,6 +168,72 @@
     min-height: 80px;
 }
 
+/* Hardware Config row (Phase 5) */
+.edit-hw-config-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.edit-hw-config-btn {
+    padding: 0.75rem 1rem;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    width: fit-content;
+}
+
+.edit-hw-config-btn:hover {
+    background: #334155;
+    color: #f1f5f9;
+    border-color: #475569;
+}
+
+.edit-hw-config-summary {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.edit-hw-config-preview {
+    margin-top: 0.25rem;
+    padding: 0.75rem 1rem;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.edit-hw-config-preview-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+}
+
+.edit-hw-config-preview-text {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .edit-select-wrapper {
     position: relative;
 }

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/Toast'
 import { handleError } from '../lib/errorHandler'
+import db from '../lib/database'
 import VehicleCard from '../components/VehicleCard'
 import BookingModal from '../components/BookingModal'
 import EditVehicleModal from '../components/EditVehicleModal'
@@ -14,7 +15,7 @@ import Header from '../components/Header'
 
 export default function Dashboard() {
     const { user, role } = useAuth()
-    const { showError } = useToast()
+    const { showError, showSuccess } = useToast()
     const [vehicles, setVehicles] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
@@ -47,9 +48,10 @@ export default function Dashboard() {
                 .order('created_at', { ascending: false })
 
             if (vehiclesError) throw vehiclesError
-            const raw = vehiclesData || []
+            // Exclude soft-deleted vehicles so they are hidden from all users
+            const raw = (vehiclesData || []).filter((v) => v.deleted_at == null)
 
-            // Sort all vehicles alphabetically by name (no filtering)
+            // Sort all vehicles alphabetically by name
             const sorted = [...raw].sort((a, b) => (a.name || '').localeCompare(b.name || ''))
 
             if (sorted.length === 0) {
@@ -107,7 +109,22 @@ export default function Dashboard() {
         v.status?.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    const isEditor = role === 'editor' || role === 'admin'
+    const handleDeleteVehicle = async (vehicle) => {
+        if (!vehicle?.id) return
+        const confirmed = window.confirm(
+            `Delete vehicle "${vehicle.name}"? This will hide it from the fleet (soft delete). You can restore it from the database if needed.`
+        )
+        if (!confirmed) return
+        try {
+            await db.deleteVehicle(vehicle.id)
+            showSuccess(`Vehicle "${vehicle.name}" has been removed from the fleet.`)
+            fetchVehicles()
+        } catch (error) {
+            console.error('Delete vehicle error:', error)
+            const details = await handleError(error, 'Dashboard.handleDeleteVehicle', { userId: user?.id })
+            showError(details.message)
+        }
+    }
 
     return (
         <div className="dashboard-container">
@@ -129,6 +146,7 @@ export default function Dashboard() {
                                 onEdit={setEditingVehicle}
                                 onBook={setBookingVehicle}
                                 onViewHistory={setChangeHistoryVehicle}
+                                onDelete={handleDeleteVehicle}
                             />
                         ))}
                         {filteredVehicles.length === 0 && (

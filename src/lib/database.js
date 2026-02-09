@@ -56,10 +56,13 @@ export const db = {
         return data
     },
 
+    /**
+     * Soft delete vehicle (sets deleted_at). Row stays for audit; RLS hides it from lists.
+     */
     async deleteVehicle(id) {
         const { error } = await supabase
             .from('vehicles')
-            .delete()
+            .update({ deleted_at: new Date().toISOString() })
             .eq('id', id)
 
         if (error) throw error
@@ -96,6 +99,36 @@ export const db = {
         return data
     },
 
+    /**
+     * Get bookings created by a user (for My Bookings page). Includes vehicle name.
+     */
+    async getBookingsByUser(userId) {
+        const { data, error } = await supabase
+            .from('bookings')
+            .select(`
+                id,
+                vehicle_id,
+                project_name,
+                pilot_name,
+                start_time,
+                end_time,
+                who_ordered,
+                location,
+                duration,
+                notes,
+                status,
+                created_at,
+                snapshotted_hw_config,
+                vehicles ( name )
+            `)
+            .eq('user_id', userId)
+            .is('deleted_at', null)
+            .order('start_time', { ascending: false })
+
+        if (error) throw error
+        return data || []
+    },
+
     async createBooking(booking) {
         const { data, error } = await supabase
             .from('bookings')
@@ -119,10 +152,13 @@ export const db = {
         return data
     },
 
+    /**
+     * Soft delete booking (sets deleted_at). Row stays for audit; RLS hides it from lists.
+     */
     async deleteBooking(id) {
         const { error } = await supabase
             .from('bookings')
-            .delete()
+            .update({ deleted_at: new Date().toISOString() })
             .eq('id', id)
 
         if (error) throw error

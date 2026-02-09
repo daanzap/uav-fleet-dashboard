@@ -1,5 +1,5 @@
-
 import { useAuth } from '../contexts/AuthContext'
+import { hardwareConfigToText, normalizeConfig } from '../lib/hardwareConfig'
 
 const RISK_ICONS = {
     high: '⚠️',    // Warning Triangle
@@ -14,9 +14,10 @@ const STATUS_Map = {
     'Decommissioned': 'bg-gray-500'
 }
 
-export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) {
+export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, onDelete }) {
     const { role } = useAuth()
     const isEditor = role === 'editor' || role === 'admin'
+    const isAdmin = role === 'admin'
 
     // Status mapping for colors/labels
     const getStatusStyle = (status) => {
@@ -38,9 +39,21 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) 
                     <span className="status-label">{label}</span>
                 </div>
                 {isEditor && (
-                    <button className="icon-btn-edit" onClick={() => onEdit(vehicle)} title="Edit Vehicle">
-                        ✎
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <button className="icon-btn-edit" onClick={() => onEdit(vehicle)} title="Edit Vehicle">
+                            ✎
+                        </button>
+                        {isAdmin && onDelete && (
+                            <button
+                                className="icon-btn-delete"
+                                onClick={() => onDelete(vehicle)}
+                                title="Delete Vehicle (soft delete)"
+                                aria-label="Delete vehicle"
+                            >
+                                🗑
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -59,7 +72,15 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) 
                 <p className="vehicle-desc">
                     {vehicle.type} • {vehicle.sw_version ? `v${vehicle.sw_version}` : 'No SW info'}
                     <br />
-                    <span style={{ opacity: 0.7 }}>{vehicle.notes || "No operational notes provided."}</span>
+                    {vehicle.notes && <span style={{ opacity: 0.7 }}>{vehicle.notes}</span>}
+                    {vehicle.hw_config && hardwareConfigToText(normalizeConfig(vehicle.hw_config)) && (
+                        <>
+                            <br />
+                            <span className="vehicle-card-hw-preview" style={{ opacity: 0.85 }} title={hardwareConfigToText(normalizeConfig(vehicle.hw_config))}>
+                                {hardwareConfigToText(normalizeConfig(vehicle.hw_config))}
+                            </span>
+                        </>
+                    )}
                 </p>
             </div>
 

@@ -79,10 +79,18 @@ export default function Header({ title }) {
                     </div>
                 )}
 
-                {/* Calendar Button */}
-                <div className="icon-btn-header" title="Calendar" onClick={() => setShowCalendarModal(true)}>
-                    📅
-                </div>
+                {/* Calendar Button — visible text + test id so E2E and a11y can find it */}
+                <button
+                    type="button"
+                    className="icon-btn-header icon-btn-header-with-label"
+                    aria-label="Calendar Overview"
+                    title="Calendar Overview"
+                    data-testid="calendar-overview-trigger"
+                    onClick={() => setShowCalendarModal(true)}
+                >
+                    <span aria-hidden="true">📅</span>
+                    <span className="calendar-btn-label">Calendar Overview</span>
+                </button>
 
                 {/* Add Vehicle Button (Ref match) */}
                 {role === 'admin' && (
@@ -107,6 +115,9 @@ export default function Header({ title }) {
                                 <span className="user-email">{user?.email}</span>
                             </div>
                             <button className="profile-menu-item" onClick={handleProfileClick}>👤 Profile Page</button>
+                            <button className="profile-menu-item" onClick={() => { navigate('/my-bookings'); setShowMenu(false); }}>
+                                📋 My Bookings
+                            </button>
                             <button
                                 className="profile-menu-item"
                                 onClick={() => {

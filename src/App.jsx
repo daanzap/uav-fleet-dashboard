@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import AdminPanel from './pages/AdminPanel'
 import Profile from './pages/Profile'
+import MyBookings from './pages/MyBookings'
 import './App.css'
 
 function PrivateRoute({ children, adminOnly = false }) {
@@ -41,6 +42,12 @@ function AppRoutes() {
         <Route path="/profile" element={
           <PrivateRoute>
             <Profile />
+          </PrivateRoute>
+        } />
+
+        <Route path="/my-bookings" element={
+          <PrivateRoute>
+            <MyBookings />
           </PrivateRoute>
         } />
 

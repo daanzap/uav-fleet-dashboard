@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom'
 
 // Feature flag: Set to true to enable email/password authentication
 const ENABLE_EMAIL_AUTH = false  // Disabled - Google OAuth only
+// Show email form when running E2E with test credentials (playwright sets VITE_E2E_EMAIL_AUTH)
+const SHOW_EMAIL_AUTH_FOR_E2E = import.meta.env.VITE_E2E_EMAIL_AUTH === 'true' || import.meta.env.VITE_E2E_EMAIL_AUTH === '1'
 
 export default function Login() {
     const { signIn, signUp, signInWithGoogle, user } = useAuth()
@@ -22,6 +24,11 @@ export default function Login() {
             navigate('/', { replace: true })
         }
     }, [user, navigate])
+
+    // E2E: auto-check robot so tests can submit the email form without clicking captcha
+    useEffect(() => {
+        if (SHOW_EMAIL_AUTH_FOR_E2E) setRobotChecked(true)
+    }, [SHOW_EMAIL_AUTH_FOR_E2E])
 
     // Password validation logic
     const validatePassword = (pass) => {
@@ -135,8 +142,8 @@ export default function Login() {
                     </button>
                 </div>
 
-                {/* Email/Password Form (Hidden - Feature Flag) */}
-                {ENABLE_EMAIL_AUTH && (
+                {/* Email/Password Form (Hidden - Feature Flag; shown for E2E when VITE_E2E_EMAIL_AUTH is set) */}
+                {(ENABLE_EMAIL_AUTH || SHOW_EMAIL_AUTH_FOR_E2E) && (
                     <>
                         <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #333', textAlign: 'center' }}>
                             <p style={{ color: '#aaa', fontSize: '0.85rem', marginBottom: '1rem' }}>
@@ -149,6 +156,8 @@ export default function Login() {
                                 <input
                                     type="email"
                                     placeholder="Email"
+                                    aria-label="Email"
+                                    data-testid="login-email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -160,6 +169,8 @@ export default function Login() {
                                 <input
                                     type="password"
                                     placeholder="Password"
+                                    aria-label="Password"
+                                    data-testid="login-password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -196,7 +207,7 @@ export default function Login() {
                                     {isSignUp ? 'Sign In instead' : 'Create account'}
                                 </button>
 
-                                <button type="submit" style={styles.button} disabled={loading}>
+                                <button type="submit" style={styles.button} disabled={loading} data-testid="login-submit">
                                     {loading ? '...' : (isSignUp ? 'Sign Up' : 'Next')}
                                 </button>
                             </div>

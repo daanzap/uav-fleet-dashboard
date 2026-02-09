@@ -24,5 +24,10 @@ export default defineConfig({
     command: 'npx vite --port 5175',
     url: 'http://localhost:5175/uav-fleet-dashboard/',
     reuseExistingServer: !process.env.CI,
+    env: {
+      ...process.env,
+      // Expose email login form for E2E when test credentials are set
+      VITE_E2E_EMAIL_AUTH: process.env.E2E_AUTH_EMAIL ? '1' : '',
+    },
   },
 })

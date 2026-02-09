@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { CalendarGridSkeleton, LoadingSpinner } from './LoadingSkeleton'
+import { CalendarGridSkeleton } from './LoadingSkeleton'
 import './CalendarOverviewModal.css'
 
 export default function CalendarOverviewModal({ onClose }) {
@@ -31,48 +31,62 @@ export default function CalendarOverviewModal({ onClose }) {
         const monthStart = new Date(year, month, 1).toISOString()
         const monthEnd = new Date(year, month, daysInMonth, 23, 59, 59).toISOString()
         async function fetchBookings() {
-            const { data, error } = await supabase
-                .from('bookings')
-                .select('id, start_time, end_time, project_name, pilot_name, who_ordered, location, duration, notes, risk_level, vehicle_id, vehicles(name)')
-                .lte('start_time', monthEnd)
-                .gte('end_time', monthStart)
-                .order('start_time', { ascending: true })
-            if (cancelled) return
-            if (error) {
-                setBookings([])
-                setLoading(false)
-                return
-            }
-            const mapped = (data || []).map(b => {
-                const v = b.vehicles
-                const vehicleName = (typeof v === 'object' && v?.name) ? v.name : (v || 'Vehicle')
-                return {
-                    id: b.id,
-                    vehicle: vehicleName,
-                    project: b.project_name ?? '',
-                    pilot: b.pilot_name ?? '',
-                    who_ordered: b.who_ordered ?? '',
-                    location: b.location ?? '',
-                    duration: b.duration ?? '',
-                    notes: b.notes ?? '',
-                    risk_level: b.risk_level ?? '',
-                    start_date: b.start_time?.slice(0, 10) ?? '',
-                    end_date: b.end_time?.slice(0, 10) ?? ''
+            try {
+                const { data, error } = await supabase
+                    .from('bookings')
+                    .select('id, start_time, end_time, project_name, pilot_name, who_ordered, location, duration, notes, risk_level, vehicle_id, vehicles(name)')
+                    .is('deleted_at', null)
+                    .lte('start_time', monthEnd)
+                    .gte('end_time', monthStart)
+                    .order('start_time', { ascending: true })
+                if (cancelled) return
+                if (error) {
+                    setBookings([])
+                    setLoading(false)
+                    return
                 }
-            })
-            setBookings(mapped)
-            setLoading(false)
+                const mapped = (data || []).map((b) => {
+                    const v = b?.vehicles
+                    const vehicleName = (typeof v === 'object' && v != null && v?.name) ? String(v.name) : (v != null ? String(v) : 'Vehicle')
+                    const startDate = b?.start_time?.slice?.(0, 10) ?? ''
+                    const endDate = b?.end_time?.slice?.(0, 10) ?? ''
+                    return {
+                        id: b?.id,
+                        vehicle: vehicleName,
+                        project: b?.project_name ?? '',
+                        pilot: b?.pilot_name ?? '',
+                        who_ordered: b?.who_ordered ?? '',
+                        location: b?.location ?? '',
+                        duration: b?.duration ?? '',
+                        notes: b?.notes ?? '',
+                        risk_level: b?.risk_level ?? '',
+                        start_date: startDate,
+                        end_date: endDate
+                    }
+                }).filter((b) => b.id != null && b.start_date && b.end_date)
+                setBookings(mapped)
+            } catch (_) {
+                setBookings([])
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
         }
         fetchBookings()
         return () => { cancelled = true }
     }, [year, month, daysInMonth])
 
     const getBookingsForDate = (day) => {
-        const dateStr = new Date(year, month, day).toISOString().split('T')[0]
-        return bookings.filter(booking => {
-            const start = booking.start_date
-            const end = booking.end_date
-            return dateStr >= start && dateStr <= end
+        if (day < 1 || day > daysInMonth) return []
+        let dateStr
+        try {
+            dateStr = new Date(year, month, day).toISOString().split('T')[0]
+        } catch (_) {
+            return []
+        }
+        return bookings.filter((booking) => {
+            const start = booking?.start_date ?? ''
+            const end = booking?.end_date ?? ''
+            return start && end && dateStr >= start && dateStr <= end
         })
     }
     const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -97,7 +111,7 @@ export default function CalendarOverviewModal({ onClose }) {
     }
 
     return (
-        <div className="calendar-overview-overlay" onClick={onClose}>
+        <div className="calendar-overview-overlay" onClick={() => onClose?.()}>
             <div className="calendar-overview-container" onClick={handleModalClick}>
                 {/* Header */}
                 <div className="calendar-overview-header">
@@ -117,6 +131,7 @@ export default function CalendarOverviewModal({ onClose }) {
                 </div>
 
                 {/* Calendar Grid: header row Mon–Sun, then 6 rows of days (Monday first) */}
+                <div className="calendar-overview-grid-wrap">
                 {loading ? (
                     <CalendarGridSkeleton />
                 ) : (
@@ -143,29 +158,38 @@ export default function CalendarOverviewModal({ onClose }) {
                                 >
                                     <div className="calendar-day-number">{dayNum}</div>
                                     {hasBookings && (
-                                        <div className="calendar-day-bookings">
-                                            {dayBookings.map((booking, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="calendar-booking-chip"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        setSelectedBooking(booking)
-                                                    }}
-                                                    style={{ cursor: 'pointer' }}
-                                                    title="Click for details"
-                                                >
-                                                    <span className="booking-vehicle">{booking.vehicle}</span>
-                                                    <span className="booking-project">{booking.project}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <>
+                                            <div className="calendar-day-bookings">
+                                                {dayBookings.map((booking, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="calendar-booking-chip"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setSelectedBooking(booking)
+                                                        }}
+                                                        style={{ cursor: 'pointer' }}
+                                                        title={`${booking.vehicle} — ${booking.project || '—'} (Click for details)`}
+                                                    >
+                                                        <span className="booking-chip-line">
+                                                            <span className="booking-vehicle">{booking.vehicle}</span>
+                                                            <span className="booking-chip-sep"> · </span>
+                                                            <span className="booking-project">{booking.project || '—'}</span>
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {dayBookings.length > 2 && (
+                                                <span className="calendar-day-more">+{dayBookings.length - 2}</span>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             )
                         })}
                     </div>
                 )}
+                </div>
 
                 {/* Legend */}
                 <div className="calendar-overview-legend">
@@ -182,8 +206,8 @@ export default function CalendarOverviewModal({ onClose }) {
 
             {/* Booking Details Popup */}
             {selectedBooking && (
-                <div 
-                    className="booking-details-overlay" 
+                <div
+                    className="booking-details-overlay"
                     onClick={() => setSelectedBooking(null)}
                     style={{
                         position: 'fixed',
@@ -232,57 +256,57 @@ export default function CalendarOverviewModal({ onClose }) {
                         <div style={{ display: 'grid', gap: '12px' }}>
                             <div>
                                 <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Vehicle</div>
-                                <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '600' }}>{selectedBooking.vehicle}</div>
+                                <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '600' }}>{selectedBooking?.vehicle ?? '—'}</div>
                             </div>
                             
                             <div>
                                 <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Project</div>
-                                <div style={{ color: '#fff' }}>{selectedBooking.project || '—'}</div>
+                                <div style={{ color: '#fff' }}>{selectedBooking?.project || '—'}</div>
                             </div>
                             
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div>
                                     <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Start Date</div>
-                                    <div style={{ color: '#fff' }}>{selectedBooking.start_date}</div>
+                                    <div style={{ color: '#fff' }}>{selectedBooking?.start_date ?? '—'}</div>
                                 </div>
                                 <div>
                                     <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>End Date</div>
-                                    <div style={{ color: '#fff' }}>{selectedBooking.end_date}</div>
+                                    <div style={{ color: '#fff' }}>{selectedBooking?.end_date ?? '—'}</div>
                                 </div>
                             </div>
                             
                             <div>
                                 <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Pilot</div>
-                                <div style={{ color: '#fff' }}>{selectedBooking.pilot || '—'}</div>
+                                <div style={{ color: '#fff' }}>{selectedBooking?.pilot || '—'}</div>
                             </div>
                             
                             <div>
                                 <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Ordered By</div>
-                                <div style={{ color: '#fff' }}>{selectedBooking.who_ordered || 'Unknown'}</div>
+                                <div style={{ color: '#fff' }}>{selectedBooking?.who_ordered || '—'}</div>
                             </div>
                             
-                            {selectedBooking.location && (
+                            {selectedBooking?.location && (
                                 <div>
                                     <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Location</div>
                                     <div style={{ color: '#fff' }}>{selectedBooking.location}</div>
                                 </div>
                             )}
                             
-                            {selectedBooking.duration && (
+                            {selectedBooking?.duration && (
                                 <div>
                                     <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Duration</div>
                                     <div style={{ color: '#fff' }}>{selectedBooking.duration}</div>
                                 </div>
                             )}
                             
-                            {selectedBooking.risk_level && (
+                            {selectedBooking?.risk_level && (
                                 <div>
                                     <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Risk Level</div>
                                     <div style={{ color: '#fff' }}>{selectedBooking.risk_level}</div>
                                 </div>
                             )}
                             
-                            {selectedBooking.notes && (
+                            {selectedBooking?.notes && (
                                 <div>
                                     <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Notes</div>
                                     <div style={{ color: '#cbd5e1', fontSize: '0.95rem', fontStyle: 'italic' }}>{selectedBooking.notes}</div>

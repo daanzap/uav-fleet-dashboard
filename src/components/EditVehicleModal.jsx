@@ -1,10 +1,11 @@
-
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from './Toast'
 import { handleError } from '../lib/errorHandler'
 import { logChange } from '../lib/changeLogger'
+import { normalizeConfig, hardwareConfigToText } from '../lib/hardwareConfig'
+import HardwareConfigModal from './HardwareConfigModal'
 import './EditVehicleModal.css'
 
 export default function EditVehicleModal({ vehicle, onClose, onSave }) {
@@ -12,23 +13,14 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
     const { showSuccess, showError } = useToast()
     const isNew = !vehicle?.id
 
-    // Hardware config: plain text for now (no JSON); backward compat for existing object/JSON
-    const getInitialHwConfig = () => {
-        if (!vehicle?.hw_config) return ''
-        if (typeof vehicle.hw_config === 'object') {
-            if (vehicle.hw_config.raw != null) return String(vehicle.hw_config.raw)
-            return JSON.stringify(vehicle.hw_config, null, 2)
-        }
-        return String(vehicle.hw_config)
-    }
-
     const [formData, setFormData] = useState({
         name: vehicle?.name || '',
         status: vehicle?.status || 'Available',
-        hw_config: getInitialHwConfig(),
+        hw_config: normalizeConfig(vehicle?.hw_config ?? null),
         sw_version: vehicle?.sw_version || '',
         notes: vehicle?.notes || ''
     })
+    const [showHwConfigModal, setShowHwConfigModal] = useState(false)
     const [loading, setLoading] = useState(false)
     const [validationErrors, setValidationErrors] = useState({})
 
@@ -88,9 +80,9 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                 beforeData = currentVehicle
             }
 
-            // Store hw_config as plain text in JSONB (single key) for now; format may change later
-            const hwConfigValue = formData.hw_config.trim()
-                ? { raw: formData.hw_config }
+            // Phase 5: structured hw_config (object) stored as JSONB
+            const hwConfigValue = formData.hw_config && typeof formData.hw_config === 'object'
+                ? formData.hw_config
                 : {}
 
             const payload = {
@@ -229,16 +221,34 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                         )}
                     </div>
 
-                    {/* Hardware Config: plain text for now (format may change later) */}
+                    {/* Hardware Config: structured modal + preview below */}
                     <div className="edit-form-group">
                         <label>Hardware Config</label>
-                        <input
-                            type="text"
-                            name="hw_config"
-                            value={formData.hw_config}
-                            onChange={handleChange}
-                            placeholder="e.g. Skynode SN-1024, Here3, SolidState-22Ah"
-                        />
+                        <div className="edit-hw-config-row">
+                            <button
+                                type="button"
+                                className="edit-hw-config-btn"
+                                onClick={() => setShowHwConfigModal(true)}
+                            >
+                                ⚙️ Configure Hardware
+                            </button>
+                            {formData.hw_config && hardwareConfigToText(formData.hw_config) && (
+                                <div className="edit-hw-config-preview" title={hardwareConfigToText(formData.hw_config)}>
+                                    <span className="edit-hw-config-preview-label">Preview</span>
+                                    <p className="edit-hw-config-preview-text">{hardwareConfigToText(formData.hw_config)}</p>
+                                </div>
+                            )}
+                        </div>
+                        {showHwConfigModal && (
+                            <HardwareConfigModal
+                                initialConfig={formData.hw_config}
+                                onSave={(config) => {
+                                    setFormData(prev => ({ ...prev, hw_config: config }))
+                                    setShowHwConfigModal(false)
+                                }}
+                                onClose={() => setShowHwConfigModal(false)}
+                            />
+                        )}
                     </div>
 
                     {/* Software Version */}
