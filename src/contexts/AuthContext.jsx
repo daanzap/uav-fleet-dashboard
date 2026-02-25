@@ -117,11 +117,12 @@ export const AuthProvider = ({ children }) => {
     }
 
     const signInWithGoogle = async () => {
-        // Build redirect URL with proper base path
-        // In dev: http://localhost:5174/uav-fleet-dashboard/
-        // In prod (Vercel): https://your-domain.vercel.app/
-        const basePath = import.meta.env.BASE_URL || '/'
-        const redirectUrl = window.location.origin + basePath
+        // Build redirect URL: 必須與 Supabase Redirect URLs 完全一致
+        // 本機: http://localhost:5174/uav-fleet-dashboard/
+        // Vercel: https://uav-fleet-dashboard.vercel.app/
+        const basePath = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '') || ''
+        const origin = window.location.origin.replace(/\/+$/, '')
+        const redirectUrl = origin + (basePath ? `/${basePath.replace(/^\/+/, '')}/` : '/')
         
         console.log('Initiating Google OAuth with redirect:', redirectUrl)
         

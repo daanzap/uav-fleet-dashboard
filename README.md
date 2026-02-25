@@ -119,7 +119,7 @@ CI runs these on push/PR to `main`. See **[TESTING.md](TESTING.md)** for full de
 ### Database Migration
 
 **Option A — Run from your machine (recommended)**  
-See **[docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)** for step-by-step instructions (where to find the database password, how to get the connection string, and how to run migrations).
+See **docs/DEV_Database_Setup.md** for step-by-step instructions (where to find the database password, connection string, and how to run migrations).
 
 **Option B — Supabase SQL Editor**  
 Run the SQL files in `/db` in order in the Supabase **SQL Editor**:
@@ -138,7 +138,7 @@ If the booking form errors with *"Could not find the 'duration' column"*, run `0
 
 ### Deploy (staging / production)
 
-- **順序：** Staging 部署 → Staging UAT 簽核 → 打 tag 並從 tag 部署 production；Rollback = 重新部署上一個 tag。
-- **步驟：** 見 **docs/STAGING_DEPLOY_STEPS.md**（Vercel/Netlify 操作、PRD §5 UAT、tag 與 rollback）。
-- **Staging：** 在 Vercel 或 Netlify 連此 repo，設定 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY`。
-- **Rollback：** 重新部署上一個 tag（e.g. v0.9.0）。見 **docs/RELEASE_AND_TASK_FLOW.md** §3。
+- **Order:** Deploy to Staging → Staging UAT sign-off → tag and deploy production from tag. Rollback = redeploy the previous tag.
+- **Steps:** See **docs/DEPLOY_Staging_Steps.md** (Vercel/Netlify, PRD §5 UAT, tagging, rollback) and **docs/DEPLOY_Release_and_Task_Flow.md**.
+- **Staging:** Connect this repo in Vercel or Netlify and set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- **Rollback:** Redeploy the previous tag (e.g. v0.9.0). See **docs/DEPLOY_Release_and_Task_Flow.md** §3.

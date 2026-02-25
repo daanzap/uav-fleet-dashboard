@@ -35,3 +35,5 @@ backups/
 # Playwright test output
 test-results/
 playwright-report/
+.vercel
+.env*.local
