@@ -19,6 +19,7 @@ export default function Dashboard() {
     const [vehicles, setVehicles] = useState([])
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
+    const [selectedVehicleIds, setSelectedVehicleIds] = useState(null) // null = show all, array = filtered
 
     // Modal States
     const [bookingVehicle, setBookingVehicle] = useState(null)
@@ -67,6 +68,7 @@ export default function Dashboard() {
                 .from('bookings')
                 .select('id, vehicle_id, start_time, project_name')
                 .in('vehicle_id', vehicleIds)
+                .is('deleted_at', null)
                 .gte('start_time', now)
                 .order('start_time', { ascending: true })
 
@@ -103,11 +105,21 @@ export default function Dashboard() {
         setSearchQuery(e.target.value)
     }
 
-    const filteredVehicles = vehicles.filter(v =>
-        v.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        v.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        v.status?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    const filteredVehicles = vehicles.filter(v => {
+        // Apply search query filter
+        const matchesSearch = v.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            v.type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            v.status?.toLowerCase().includes(searchQuery.toLowerCase())
+        
+        // Apply vehicle ID filter (null means show all)
+        const matchesVehicleFilter = selectedVehicleIds === null || selectedVehicleIds.includes(v.id)
+        
+        return matchesSearch && matchesVehicleFilter
+    })
+
+    const handleFilterChange = (vehicleIds) => {
+        setSelectedVehicleIds(vehicleIds)
+    }
 
     const handleDeleteVehicle = async (vehicle) => {
         if (!vehicle?.id) return
@@ -128,13 +140,12 @@ export default function Dashboard() {
 
     return (
         <div className="dashboard-container">
-            <Header />
+            <Header 
+                onFilterChange={handleFilterChange}
+                selectedVehicleIds={selectedVehicleIds || []}
+            />
 
             <div className="dashboard-content">
-                <section className="dashboard-fleet-section" aria-label="Fleet vehicles">
-                    <h2 className="dashboard-fleet-title">Fleet</h2>
-                </section>
-                
                 {loading ? (
                     <DashboardSkeleton count={6} />
                 ) : (

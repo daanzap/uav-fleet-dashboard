@@ -2,13 +2,14 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import CalendarOverviewModal from './CalendarOverviewModal'
+import FilterModal from './FilterModal'
 import logoSrc from '../assets/logo.png'
 
-export default function Header({ title }) {
+export default function Header({ title, onFilterChange, selectedVehicleIds = [] }) {
     const { user, role, signOut } = useAuth()
     const [showMenu, setShowMenu] = useState(false)
-    const [showSearch, setShowSearch] = useState(false)
     const [showCalendarModal, setShowCalendarModal] = useState(false)
+    const [showFilterModal, setShowFilterModal] = useState(false)
     const menuRef = useRef(null)
     const navigate = useNavigate()
 
@@ -64,32 +65,30 @@ export default function Header({ title }) {
 
             <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
 
-                {/* Search (Hidden in reference but user asked for it earlier, keeping it subtle) */}
-                {showSearch ? (
-                    <input
-                        type="text"
-                        className="search-input-header"
-                        placeholder="Search..."
-                        autoFocus
-                        onBlur={(e) => !e.target.value && setShowSearch(false)}
-                    />
-                ) : (
-                    <div className="icon-btn-header" onClick={() => setShowSearch(true)} title="Search">
-                        🔍
-                    </div>
-                )}
-
-                {/* Calendar Button — visible text + test id so E2E and a11y can find it */}
+                {/* Filter button */}
                 <button
                     type="button"
                     className="icon-btn-header icon-btn-header-with-label"
-                    aria-label="Calendar Overview"
-                    title="Calendar Overview"
-                    data-testid="calendar-overview-trigger"
+                    aria-label="Filter"
+                    title="Filter Vehicles"
+                    data-testid="filter-trigger"
+                    onClick={() => setShowFilterModal(true)}
+                >
+                    <span aria-hidden="true">🔍</span>
+                    <span className="filter-btn-label">Filter</span>
+                </button>
+
+                {/* Schedule button — visible text + test id for E2E and a11y */}
+                <button
+                    type="button"
+                    className="icon-btn-header icon-btn-header-with-label"
+                    aria-label="Schedule"
+                    title="Schedule"
+                    data-testid="schedule-trigger"
                     onClick={() => setShowCalendarModal(true)}
                 >
                     <span aria-hidden="true">📅</span>
-                    <span className="calendar-btn-label">Calendar Overview</span>
+                    <span className="calendar-btn-label">Schedule</span>
                 </button>
 
                 {/* Add Vehicle Button (Ref match) */}
@@ -119,15 +118,6 @@ export default function Header({ title }) {
                                 📋 My Bookings
                             </button>
                             <button
-                                className="profile-menu-item"
-                                onClick={() => {
-                                    alert('Change Log feature - Design TBD\n\nThis will show a comprehensive history of all system changes.')
-                                    setShowMenu(false)
-                                }}
-                            >
-                                📜 Change Log
-                            </button>
-                            <button
                                 className={`profile-menu-item ${role === 'admin' ? '' : 'disabled'}`}
                                 onClick={handleAdminClick}
                                 style={{ opacity: role === 'admin' ? 1 : 0.5, cursor: role === 'admin' ? 'pointer' : 'default', display: 'flex', justifyContent: 'space-between' }}
@@ -143,6 +133,14 @@ export default function Header({ title }) {
 
             {showCalendarModal && (
                 <CalendarOverviewModal onClose={() => setShowCalendarModal(false)} />
+            )}
+
+            {showFilterModal && (
+                <FilterModal
+                    onClose={() => setShowFilterModal(false)}
+                    onApplyFilter={onFilterChange}
+                    initialSelectedVehicles={selectedVehicleIds}
+                />
             )}
         </header>
     )

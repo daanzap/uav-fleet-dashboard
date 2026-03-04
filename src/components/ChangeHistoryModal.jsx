@@ -6,6 +6,7 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
     const [history, setHistory] = useState([])
     const [loading, setLoading] = useState(true)
     const [expandedEntries, setExpandedEntries] = useState(new Set())
+    const [showAll, setShowAll] = useState(false)
 
     useEffect(() => {
         loadHistory()
@@ -102,7 +103,7 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
                         </div>
                     ) : (
                         <div className="change-history-timeline">
-                            {history.map((entry, index) => {
+                            {(showAll ? history : history.slice(0, 3)).map((entry, index) => {
                                 const isExpanded = expandedEntries.has(entry.id)
                                 const changedFields = formatChangedFields(entry.changed_fields)
                                 const hasDetails = changedFields.length > 0 || entry.notes
@@ -187,6 +188,37 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
                                     </div>
                                 )
                             })}
+                            {!showAll && history.length > 3 && (
+                                <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                                    <button
+                                        onClick={() => setShowAll(true)}
+                                        className="show-more-btn"
+                                        style={{
+                                            background: '#3b82f6',
+                                            color: '#fff',
+                                            border: 'none',
+                                            padding: '12px 24px',
+                                            borderRadius: '8px',
+                                            fontSize: '0.95rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#2563eb'
+                                            e.currentTarget.style.transform = 'translateY(-2px)'
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)'
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#3b82f6'
+                                            e.currentTarget.style.transform = 'translateY(0)'
+                                            e.currentTarget.style.boxShadow = 'none'
+                                        }}
+                                    >
+                                        Show More ({history.length - 3} more)
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -5,9 +5,25 @@ import './CalendarOverviewModal.css'
 
 export default function CalendarOverviewModal({ onClose }) {
     const [currentMonth, setCurrentMonth] = useState(new Date())
+    const [viewMode, setViewMode] = useState('weekly') // 'weekly' | 'monthly', default weekly
     const [bookings, setBookings] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedBooking, setSelectedBooking] = useState(null)
+    const [allVehicles, setAllVehicles] = useState([])
+    const [selectedVehicleIds, setSelectedVehicleIds] = useState([])
+
+    // Week range for weekly view (Monday–Sunday, ISO)
+    const getWeekStart = (d) => {
+        const date = new Date(d)
+        const day = date.getDay()
+        const diff = date.getDate() - day + (day === 0 ? -6 : 1)
+        const out = new Date(date)
+        out.setDate(diff)
+        return out
+    }
+    const weekStart = getWeekStart(new Date(currentMonth))
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 6)
 
     // Monday = 0, Sunday = 6 (ISO-style; first day of week = Monday)
     const { daysInMonth, startOffsetMonday, year, month } = (() => {
@@ -27,18 +43,51 @@ export default function CalendarOverviewModal({ onClose }) {
 
     useEffect(() => {
         let cancelled = false
-        setLoading(true)
-        const monthStart = new Date(year, month, 1).toISOString()
-        const monthEnd = new Date(year, month, daysInMonth, 23, 59, 59).toISOString()
-        async function fetchBookings() {
+        async function fetchVehicles() {
             try {
                 const { data, error } = await supabase
+                    .from('vehicles')
+                    .select('id, name')
+                    .is('deleted_at', null)
+                    .order('name', { ascending: true })
+                if (cancelled) return
+                if (!error && data) {
+                    setAllVehicles(data)
+                }
+            } catch (_) {
+                setAllVehicles([])
+            }
+        }
+        fetchVehicles()
+        return () => { cancelled = true }
+    }, [])
+
+    useEffect(() => {
+        let cancelled = false
+        setLoading(true)
+        const rangeStart = viewMode === 'weekly'
+            ? new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate(), 0, 0, 0).toISOString()
+            : new Date(year, month, 1).toISOString()
+        const rangeEnd = viewMode === 'weekly'
+            ? new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate(), 23, 59, 59).toISOString()
+            : new Date(year, month, daysInMonth, 23, 59, 59).toISOString()
+        async function fetchBookings() {
+            try {
+                let query = supabase
                     .from('bookings')
                     .select('id, start_time, end_time, project_name, pilot_name, who_ordered, location, duration, notes, risk_level, vehicle_id, vehicles(name)')
                     .is('deleted_at', null)
-                    .lte('start_time', monthEnd)
-                    .gte('end_time', monthStart)
+                    .lte('start_time', rangeEnd)
+                    .gte('end_time', rangeStart)
                     .order('start_time', { ascending: true })
+
+                // Apply vehicle filter if any vehicles are selected
+                if (selectedVehicleIds.length > 0) {
+                    query = query.in('vehicle_id', selectedVehicleIds)
+                }
+
+                const { data, error } = await query
+
                 if (cancelled) return
                 if (error) {
                     setBookings([])
@@ -53,6 +102,7 @@ export default function CalendarOverviewModal({ onClose }) {
                     return {
                         id: b?.id,
                         vehicle: vehicleName,
+                        vehicle_id: b?.vehicle_id,
                         project: b?.project_name ?? '',
                         pilot: b?.pilot_name ?? '',
                         who_ordered: b?.who_ordered ?? '',
@@ -73,7 +123,7 @@ export default function CalendarOverviewModal({ onClose }) {
         }
         fetchBookings()
         return () => { cancelled = true }
-    }, [year, month, daysInMonth])
+    }, [year, month, daysInMonth, viewMode, weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate(), weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate(), selectedVehicleIds])
 
     const getBookingsForDate = (day) => {
         if (day < 1 || day > daysInMonth) return []
@@ -89,7 +139,18 @@ export default function CalendarOverviewModal({ onClose }) {
             return start && end && dateStr >= start && dateStr <= end
         })
     }
+
+    const getBookingsForDateStr = (dateStr) => {
+        return bookings.filter((booking) => {
+            const start = booking?.start_date ?? ''
+            const end = booking?.end_date ?? ''
+            return start && end && dateStr >= start && dateStr <= end
+        })
+    }
     const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    const weekLabel = viewMode === 'weekly'
+        ? `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+        : monthName
 
     const goToPrevMonth = () => {
         setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))
@@ -97,6 +158,22 @@ export default function CalendarOverviewModal({ onClose }) {
 
     const goToNextMonth = () => {
         setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))
+    }
+
+    const goToPrevWeek = () => {
+        const d = new Date(currentMonth)
+        d.setDate(d.getDate() - 7)
+        setCurrentMonth(d)
+    }
+
+    const goToNextWeek = () => {
+        const d = new Date(currentMonth)
+        d.setDate(d.getDate() + 7)
+        setCurrentMonth(d)
+    }
+
+    const goToToday = () => {
+        setCurrentMonth(new Date())
     }
 
     const handleModalClick = (e) => {
@@ -110,30 +187,151 @@ export default function CalendarOverviewModal({ onClose }) {
             currentMonth.getFullYear() === today.getFullYear()
     }
 
+    const isTodayDate = (d) => {
+        return d.getDate() === today.getDate() &&
+            d.getMonth() === today.getMonth() &&
+            d.getFullYear() === today.getFullYear()
+    }
+
     return (
         <div className="calendar-overview-overlay" onClick={() => onClose?.()}>
             <div className="calendar-overview-container" onClick={handleModalClick}>
                 {/* Header */}
                 <div className="calendar-overview-header">
                     <div className="calendar-overview-icon">📅</div>
-                    <div className="calendar-overview-title-wrap">
-                        <h2>Fleet Calendar Overview</h2>
-                        <p className="calendar-overview-subtitle">Vehicle booking schedule</p>
+                    <div style={{ flex: 1 }}></div>
+                    
+                    {/* Vehicle Filter Dropdown */}
+                    <div style={{ position: 'relative' }}>
+                        <select
+                            multiple
+                            value={selectedVehicleIds}
+                            onChange={(e) => {
+                                const selected = Array.from(e.target.selectedOptions, option => option.value)
+                                setSelectedVehicleIds(selected)
+                            }}
+                            className="calendar-vehicle-filter"
+                            title="Filter by vehicles (hold Ctrl/Cmd to select multiple)"
+                            style={{
+                                background: '#334155',
+                                border: '1px solid #475569',
+                                borderRadius: '6px',
+                                color: '#e2e8f0',
+                                padding: '6px 12px',
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                maxHeight: '120px',
+                                minWidth: '150px'
+                            }}
+                        >
+                            {allVehicles.map(v => (
+                                <option key={v.id} value={v.id} style={{ padding: '4px' }}>
+                                    {v.name}
+                                </option>
+                            ))}
+                        </select>
+                        {selectedVehicleIds.length > 0 && (
+                            <button
+                                onClick={() => setSelectedVehicleIds([])}
+                                style={{
+                                    position: 'absolute',
+                                    top: '-8px',
+                                    right: '-8px',
+                                    background: '#ef4444',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '20px',
+                                    height: '20px',
+                                    fontSize: '0.75rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 'bold'
+                                }}
+                                title="Clear vehicle filter"
+                            >
+                                ×
+                            </button>
+                        )}
                     </div>
+
+                    <button 
+                        type="button" 
+                        onClick={() => setViewMode(viewMode === 'weekly' ? 'monthly' : 'weekly')}
+                        className="calendar-view-toggle-btn"
+                        title={`Switch to ${viewMode === 'weekly' ? 'monthly' : 'weekly'} view`}
+                    >
+                        {viewMode === 'weekly' ? 'Weekly' : 'Monthly'}
+                    </button>
                     <button type="button" onClick={onClose} className="calendar-overview-close" aria-label="Close">×</button>
                 </div>
 
-                {/* Calendar Controls */}
+                {/* Calendar Controls: Today, Prev/Next */}
                 <div className="calendar-overview-controls">
-                    <button type="button" onClick={goToPrevMonth}>‹ Previous</button>
-                    <span className="calendar-month-title">{monthName}</span>
-                    <button type="button" onClick={goToNextMonth}>Next ›</button>
+                    <button type="button" onClick={goToToday}>Today</button>
+                    <button type="button" onClick={viewMode === 'weekly' ? goToPrevWeek : goToPrevMonth}>‹ Previous</button>
+                    <span className="calendar-month-title">{weekLabel}</span>
+                    <button type="button" onClick={viewMode === 'weekly' ? goToNextWeek : goToNextMonth}>Next ›</button>
                 </div>
 
-                {/* Calendar Grid: header row Mon–Sun, then 6 rows of days (Monday first) */}
+                {/* Calendar Grid: weekly (7 days) or monthly (6 rows) */}
                 <div className="calendar-overview-grid-wrap">
                 {loading ? (
                     <CalendarGridSkeleton />
+                ) : viewMode === 'weekly' ? (
+                    <div className="calendar-overview-grid calendar-overview-grid-weekly fade-in">
+                        <div className="calendar-day-header">Mon</div>
+                        <div className="calendar-day-header">Tue</div>
+                        <div className="calendar-day-header">Wed</div>
+                        <div className="calendar-day-header">Thu</div>
+                        <div className="calendar-day-header">Fri</div>
+                        <div className="calendar-day-header">Sat</div>
+                        <div className="calendar-day-header">Sun</div>
+                        {[0, 1, 2, 3, 4, 5, 6].map((dayOffset) => {
+                            const d = new Date(weekStart)
+                            d.setDate(d.getDate() + dayOffset)
+                            const dateStr = d.toISOString().split('T')[0]
+                            const dayBookings = getBookingsForDateStr(dateStr)
+                            const hasBookings = dayBookings.length > 0
+                            return (
+                                <div
+                                    key={dateStr}
+                                    className={`calendar-day-cell ${isTodayDate(d) ? 'today' : ''} ${hasBookings ? 'has-bookings' : ''}`}
+                                >
+                                    <div className="calendar-day-number">{d.getDate()}</div>
+                                    {hasBookings && (
+                                        <>
+                                            <div className="calendar-day-bookings">
+                                                {dayBookings.map((booking, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="calendar-booking-chip"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setSelectedBooking(booking)
+                                                        }}
+                                                        style={{ cursor: 'pointer' }}
+                                                        title={`${booking.vehicle} — ${booking.project || '—'} (Click for details)`}
+                                                    >
+                                                        <span className="booking-chip-line">
+                                                            <span className="booking-vehicle">{booking.vehicle}</span>
+                                                            <span className="booking-chip-sep"> · </span>
+                                                            <span className="booking-project">{booking.project || '—'}</span>
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            {dayBookings.length > 2 && (
+                                                <span className="calendar-day-more">+{dayBookings.length - 2}</span>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
                 ) : (
                     <div className="calendar-overview-grid fade-in">
                         <div className="calendar-day-header">Mon</div>

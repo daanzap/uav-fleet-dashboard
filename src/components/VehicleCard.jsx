@@ -10,8 +10,7 @@ const RISK_ICONS = {
 const STATUS_Map = {
     'Available': 'bg-green-500',
     'Maintenance': 'bg-yellow-500',
-    'Mission': 'bg-blue-500',
-    'Decommissioned': 'bg-gray-500'
+    'Mission': 'bg-blue-500'
 }
 
 export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, onDelete }) {
@@ -22,7 +21,7 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, on
     // Status mapping for colors/labels
     const getStatusStyle = (status) => {
         const s = status?.toLowerCase() || 'unknown'
-        if (s.includes('available') || s.includes('ready')) return { className: 'status-ready', icon: '✓', label: 'Ready' }
+        if (s.includes('available') || s.includes('ready')) return { className: 'status-ready', icon: '✓', label: 'Available' }
         if (s.includes('maintenance')) return { className: 'status-maintenance', icon: '⚠️', label: 'Maintenance' }
         if (s.includes('mission')) return { className: 'status-mission', icon: '🚀', label: 'On Mission' }
         return { className: 'status-unknown', icon: '?', label: status }
@@ -59,9 +58,6 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, on
 
             {/* Identity Section */}
             <div className="card-identity">
-                <div className="icon-box">
-                    🚀
-                </div>
                 <div className="id-text">
                     <h2 className="unit-id">{vehicle.name}</h2>
                 </div>
@@ -99,6 +95,35 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, on
             <div className="card-footer">
                 <button className="btn-book-now" onClick={() => onBook(vehicle)}>
                     <span style={{ marginRight: '6px' }}>📝</span> RESERVE
+                </button>
+                <button 
+                    className="btn-changelog" 
+                    onClick={() => onViewHistory(vehicle)}
+                    title="View change history"
+                    style={{
+                        background: '#334155',
+                        border: 'none',
+                        color: '#cbd5e1',
+                        padding: '10px 16px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#475569'
+                        e.currentTarget.style.transform = 'translateY(-1px)'
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#334155'
+                        e.currentTarget.style.transform = 'translateY(0)'
+                    }}
+                >
+                    📜
                 </button>
             </div>
         </div>
