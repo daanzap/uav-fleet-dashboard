@@ -1,3 +1,9 @@
+# Codebase fixes summary
+
+**Note:** This archived document is in Chinese. For current English documentation see **HANDOVER.md** and **docs/00_README_DOCS_INDEX.md**.
+
+---
+
 # Codebase 修正總結
 
 **日期：** 2026年2月4日  

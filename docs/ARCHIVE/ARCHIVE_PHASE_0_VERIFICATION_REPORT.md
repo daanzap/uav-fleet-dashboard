@@ -1,14 +1,19 @@
-# Phase 0 驗證報告 ✅
+# Phase 0 verification report
 
-**驗證日期:** 2026 年 2 月 6 日  
-**驗證者:** AI Assistant  
-**狀態:** ✅ 所有檢查通過
+**Note:** This archived document was originally in Chinese. For current English documentation see **HANDOVER.md** and **docs/00_README_DOCS_INDEX.md**.
 
 ---
 
-## 📋 檔案完整性檢查
+**Verification date:** 2026-02-06  
+**Verified by:** AI Assistant  
+**Status:** All checks passed
 
-### Migration Scripts ✅
+---
+
+## File integrity
+
+### Migration scripts
+
 
 | 檔案 | 大小 | SQL 操作數 | 狀態 |
 |------|------|-----------|------|

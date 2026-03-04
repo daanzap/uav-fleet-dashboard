@@ -20,11 +20,26 @@ function formatTime(iso) {
 }
 
 function formatRange(start, end) {
-    const s = formatDate(start)
-    const t1 = formatTime(start)
-    const t2 = formatTime(end)
-    if (t1 && t2) return `${s} ${t1} – ${t2}`
-    return s
+    if (!start || !end) return '—'
+    
+    const startDate = new Date(start)
+    const endDate = new Date(end)
+    
+    // Check if it's a multi-day booking (different dates)
+    const startDay = startDate.toISOString().split('T')[0]
+    const endDay = endDate.toISOString().split('T')[0]
+    
+    if (startDay !== endDay) {
+        // Multi-day booking: show full date range
+        return `${formatDate(start)} – ${formatDate(end)}`
+    } else {
+        // Same day: show date with time range if available
+        const s = formatDate(start)
+        const t1 = formatTime(start)
+        const t2 = formatTime(end)
+        if (t1 && t2) return `${s} ${t1} – ${t2}`
+        return s
+    }
 }
 
 export default function MyBookings() {

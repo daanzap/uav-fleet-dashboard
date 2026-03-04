@@ -114,6 +114,11 @@
     font-weight: 600;
     font-size: 1.05rem;
     color: #f1f5f9;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
 }
 
 .calendar-header button {

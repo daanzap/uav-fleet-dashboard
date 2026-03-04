@@ -1,3 +1,9 @@
+# Critical design fix
+
+**Note:** This archived document is in Chinese. For current English documentation see **HANDOVER.md** and **docs/00_README_DOCS_INDEX.md**.
+
+---
+
 # 🚨 關鍵設計錯誤與修正方案
 
 **日期：** 2026年2月4日  

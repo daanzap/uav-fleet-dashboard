@@ -117,8 +117,8 @@ export const AuthProvider = ({ children }) => {
     }
 
     const signInWithGoogle = async () => {
-        // Build redirect URL: 必須與 Supabase Redirect URLs 完全一致
-        // 本機: http://localhost:5174/uav-fleet-dashboard/
+        // Build redirect URL: must match Supabase Redirect URLs exactly
+        // Local: http://localhost:5174/uav-fleet-dashboard/
         // Vercel: https://uav-fleet-dashboard.vercel.app/
         const basePath = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '') || ''
         const origin = window.location.origin.replace(/\/+$/, '')

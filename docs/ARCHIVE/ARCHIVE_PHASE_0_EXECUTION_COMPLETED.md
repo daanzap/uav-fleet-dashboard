@@ -1,18 +1,23 @@
-# Phase 0 執行完成報告 ✅
+# Phase 0 execution completed
 
-**執行日期:** 2026 年 2 月 6 日  
-**執行者:** Alex Chang  
-**狀態:** ✅ 完全成功
+**Note:** This archived document was originally in Chinese. For current English documentation see **HANDOVER.md** and **docs/00_README_DOCS_INDEX.md**.
 
 ---
 
-## 📊 執行摘要
+**Execution date:** 2026-02-06  
+**Executed by:** Alex Chang  
+**Status:** Success
 
-### 執行方式
-- ✅ 使用 `db/PHASE_0_RUN_ALL.sql` (all-in-one 腳本)
-- ✅ 在 Supabase SQL Editor 執行
-- ✅ 執行時間: ~1 分鐘
-- ✅ 無錯誤，所有驗證通過
+---
+
+## Execution summary
+
+### How it was run
+- Used `db/PHASE_0_RUN_ALL.sql` (all-in-one script)
+- Ran in Supabase SQL Editor
+- Duration: ~1 minute
+- No errors; all checks passed
+
 
 ---
 

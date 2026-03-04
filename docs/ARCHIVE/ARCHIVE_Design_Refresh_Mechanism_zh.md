@@ -1,4 +1,8 @@
-# 設計分析：Dashboard 資料更新機制
+# Design analysis: Dashboard data refresh mechanism
+
+**Note:** This archived document is in Chinese. For current English documentation see **HANDOVER.md** and **docs/00_README_DOCS_INDEX.md**.
+
+---
 
 **分析日期：** 2026年2月4日  
 **分析者：** Phase 0 實施前的審查  

@@ -68,12 +68,14 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
             errors.dates = 'Please select at least one date'
         }
         
-        if (!formData.pilot) {
-            errors.pilot = 'Pilot is required'
-        }
-        
         if (!formData.project || formData.project.trim() === '') {
             errors.project = 'Project name is required'
+        }
+        
+        // Who ordered is required
+        const whoOrderedFinal = whoOrderedMode === 'others' ? whoOrderedCustom : userName
+        if (!whoOrderedFinal || whoOrderedFinal.trim() === '') {
+            errors.whoOrdered = 'Who ordered is required'
         }
         
         setValidationErrors(errors)
@@ -94,6 +96,7 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                 .from('bookings')
                 .select('start_time, end_time, project_name')
                 .eq('vehicle_id', vehicle.id)
+                .is('deleted_at', null)
                 .lte('start_time', monthEnd)
                 .gte('end_time', monthStart)
             
@@ -148,7 +151,8 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
         const firstDay = new Date(year, month, 1)
         const lastDay = new Date(year, month + 1, 0)
         const daysInMonth = lastDay.getDate()
-        const startingDayOfWeek = firstDay.getDay()
+        // Convert Sunday=0 to Monday=0: (getDay() + 6) % 7
+        const startingDayOfWeek = (firstDay.getDay() + 6) % 7
 
         return { daysInMonth, startingDayOfWeek, year, month }
     }
@@ -373,13 +377,13 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                             <button type="button" onClick={goToNextMonth}>›</button>
                         </div>
                         <div className="calendar-grid">
-                            <div className="calendar-day-header">Sun</div>
                             <div className="calendar-day-header">Mon</div>
                             <div className="calendar-day-header">Tue</div>
                             <div className="calendar-day-header">Wed</div>
                             <div className="calendar-day-header">Thu</div>
                             <div className="calendar-day-header">Fri</div>
                             <div className="calendar-day-header">Sat</div>
+                            <div className="calendar-day-header">Sun</div>
 
                             {Array.from({ length: startingDayOfWeek }).map((_, i) => (
                                 <div key={`empty-${i}`} className="calendar-day-empty" />
@@ -433,14 +437,23 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                         </div>
 
                         <div className="booking-form-group">
-                            <label>Who Ordered</label>
+                            <label>Who Ordered *</label>
                             <select
                                 value={whoOrderedMode}
                                 onChange={(e) => {
                                     const mode = e.target.value
                                     setWhoOrderedMode(mode)
                                     if (mode === 'me') setWhoOrderedCustom('')
+                                    // Clear validation error when changing mode
+                                    if (validationErrors.whoOrdered) {
+                                        setValidationErrors(prev => {
+                                            const newErrors = { ...prev }
+                                            delete newErrors.whoOrdered
+                                            return newErrors
+                                        })
+                                    }
                                 }}
+                                className={validationErrors.whoOrdered ? 'error' : ''}
                             >
                                 <option value="me">{userName}</option>
                                 <option value="others">Others</option>
@@ -449,32 +462,39 @@ export default function BookingModal({ vehicle, onClose, onSave }) {
                                 <input
                                     type="text"
                                     value={whoOrderedCustom}
-                                    onChange={(e) => setWhoOrderedCustom(e.target.value)}
+                                    onChange={(e) => {
+                                        setWhoOrderedCustom(e.target.value)
+                                        // Clear validation error when typing
+                                        if (validationErrors.whoOrdered) {
+                                            setValidationErrors(prev => {
+                                                const newErrors = { ...prev }
+                                                delete newErrors.whoOrdered
+                                                return newErrors
+                                            })
+                                        }
+                                    }}
                                     placeholder="Enter name"
-                                    className="booking-who-ordered-custom"
+                                    required
+                                    className={`booking-who-ordered-custom ${validationErrors.whoOrdered ? 'error' : ''}`}
                                 />
+                            )}
+                            {validationErrors.whoOrdered && (
+                                <span className="validation-error">{validationErrors.whoOrdered}</span>
                             )}
                         </div>
 
                         <div className="booking-form-group">
-                            <label>Pilot *</label>
+                            <label>Pilot</label>
                             <select 
                                 name="pilot" 
                                 value={formData.pilot} 
-                                onChange={handleChange} 
-                                required
-                                className={validationErrors.pilot ? 'error' : ''}
-                                aria-invalid={!!validationErrors.pilot}
-                                aria-describedby={validationErrors.pilot ? 'pilot-error' : undefined}
+                                onChange={handleChange}
                             >
                                 <option value="">Select a pilot</option>
                                 {PILOT_OPTIONS.map(name => (
                                     <option key={name} value={name}>{name}</option>
                                 ))}
                             </select>
-                            {validationErrors.pilot && (
-                                <span id="pilot-error" className="validation-error">{validationErrors.pilot}</span>
-                            )}
                         </div>
 
                         <div className="booking-form-group">

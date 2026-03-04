@@ -1,18 +1,23 @@
-# Phase 0 準備執行 🚀
+# Phase 0 ready to execute
 
-**狀態:** ✅ 所有腳本已準備完成  
-**日期:** 2026 年 2 月 6 日  
-**預估時間:** 45 分鐘
+**Note:** This archived document was originally in Chinese. For current English documentation see **HANDOVER.md** and **docs/00_README_DOCS_INDEX.md**.
 
 ---
 
-## 📋 已完成準備工作
+**Status:** All scripts ready  
+**Date:** 2026-02-06  
+**Estimate:** 45 minutes
 
-✅ **Migration Scripts 已建立:**
-- `db/09_remove_vehicles_risk_level.sql` (Task 8 - 移除 risk_level)
-- `db/10_add_soft_delete.sql` (Task 9 - 軟刪除支援)
-- `db/11_create_change_logs.sql` (Task 10 - 稽核表)
-- `db/PHASE_0_RUN_ALL.sql` (一次執行所有任務)
+---
+
+## Prep completed
+
+**Migration scripts:**
+- `db/09_remove_vehicles_risk_level.sql` (Task 8 - remove risk_level)
+- `db/10_add_soft_delete.sql` (Task 9 - soft delete)
+- `db/11_create_change_logs.sql` (Task 10 - audit table)
+- `db/PHASE_0_RUN_ALL.sql` (run all in one go)
+
 
 ✅ **Documentation 已建立:**
 - `PHASE_0_EXECUTION_CHECKLIST.md` (執行清單)

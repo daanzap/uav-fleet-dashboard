@@ -1,14 +1,19 @@
-# Phase 0 完成總結 ✅
+# Phase 0 summary
 
-**日期:** 2026 年 2 月 6 日  
-**狀態:** ✅ 準備工作完成，可以執行  
-**Git Commits:** 2 個提交已推送到 `origin/main`
+**Note:** This archived document was originally in Chinese. For current English documentation see **HANDOVER.md** and **docs/00_README_DOCS_INDEX.md**.
 
 ---
 
-## 🎉 已完成工作
+**Date:** 2026-02-06  
+**Status:** Prep complete; ready to execute  
+**Git:** 2 commits pushed to `origin/main`
 
-### 1. Migration Scripts 建立完成
+---
+
+## Completed work
+
+### 1. Migration scripts
+
 
 | 檔案 | 任務 | 時間 | 風險 |
 |------|------|------|------|
