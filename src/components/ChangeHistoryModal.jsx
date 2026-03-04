@@ -70,20 +70,17 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
             return <em style={{ color: '#94a3b8', fontSize: '0.85rem' }}>(empty)</em>
         }
         if (typeof value === 'object') {
-            // For hw_config, show a summary instead of full JSON
+            // For hw_config, show a simple summary
             if (fieldName === 'hw_config') {
-                const keys = Object.keys(value).filter(k => value[k]?.enabled === true || value[k]?.enabled === false)
-                if (keys.length > 0) {
-                    return <span style={{ fontSize: '0.85rem', color: '#475569' }}>
-                        Hardware Config ({keys.length} modules)
-                    </span>
-                }
+                return <span style={{ fontSize: '0.85rem', color: '#475569', fontStyle: 'italic' }}>
+                    [Config Updated]
+                </span>
             }
-            // For other objects, show compact JSON
+            // For other objects, show very compact representation
             const jsonStr = JSON.stringify(value)
-            if (jsonStr.length > 100) {
-                return <span style={{ fontSize: '0.85rem', color: '#475569' }}>
-                    {jsonStr.substring(0, 100)}...
+            if (jsonStr.length > 50) {
+                return <span style={{ fontSize: '0.85rem', color: '#475569', fontStyle: 'italic' }}>
+                    [Object]
                 </span>
             }
             return <code style={{ fontSize: '0.85rem' }}>{jsonStr}</code>
