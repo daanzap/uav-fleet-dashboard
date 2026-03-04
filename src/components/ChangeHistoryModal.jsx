@@ -70,11 +70,23 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
             return <em style={{ color: '#94a3b8', fontSize: '0.85rem' }}>(empty)</em>
         }
         if (typeof value === 'object') {
-            // For hw_config, show a simple summary
+            // For hw_config, show enabled modules count
             if (fieldName === 'hw_config') {
-                return <span style={{ fontSize: '0.85rem', color: '#475569', fontStyle: 'italic' }}>
-                    [Config Updated]
-                </span>
+                try {
+                    const enabledModules = Object.keys(value).filter(k => 
+                        value[k] && typeof value[k] === 'object' && value[k].enabled === true
+                    )
+                    const disabledModules = Object.keys(value).filter(k => 
+                        value[k] && typeof value[k] === 'object' && value[k].enabled === false
+                    )
+                    return <span style={{ fontSize: '0.85rem', color: '#475569' }}>
+                        {enabledModules.length} enabled, {disabledModules.length} disabled
+                    </span>
+                } catch (e) {
+                    return <span style={{ fontSize: '0.85rem', color: '#475569', fontStyle: 'italic' }}>
+                        [Config]
+                    </span>
+                }
             }
             // For other objects, show very compact representation
             const jsonStr = JSON.stringify(value)
