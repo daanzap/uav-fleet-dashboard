@@ -74,7 +74,7 @@ export default function Header({ title, onFilterChange, selectedVehicleIds = [] 
                     data-testid="filter-trigger"
                     onClick={() => setShowFilterModal(true)}
                 >
-                    <span aria-hidden="true">🔍</span>
+                    <span aria-hidden="true">⚙️</span>
                     <span className="filter-btn-label">Filter</span>
                 </button>
 

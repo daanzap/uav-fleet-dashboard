@@ -65,13 +65,28 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
         }
     }
 
-    const renderValue = (value) => {
+    const renderValue = (value, fieldName = '') => {
         if (value === null || value === undefined || value === '') {
             return <em style={{ color: '#94a3b8', fontSize: '0.85rem' }}>(empty)</em>
         }
         if (typeof value === 'object') {
-            const jsonStr = JSON.stringify(value, null, 2)
-            return <code style={{ fontSize: '0.85rem', display: 'block', maxWidth: '100%', overflow: 'auto' }}>{jsonStr}</code>
+            // For hw_config, show a summary instead of full JSON
+            if (fieldName === 'hw_config') {
+                const keys = Object.keys(value).filter(k => value[k]?.enabled === true || value[k]?.enabled === false)
+                if (keys.length > 0) {
+                    return <span style={{ fontSize: '0.85rem', color: '#475569' }}>
+                        Hardware Config ({keys.length} modules)
+                    </span>
+                }
+            }
+            // For other objects, show compact JSON
+            const jsonStr = JSON.stringify(value)
+            if (jsonStr.length > 100) {
+                return <span style={{ fontSize: '0.85rem', color: '#475569' }}>
+                    {jsonStr.substring(0, 100)}...
+                </span>
+            }
+            return <code style={{ fontSize: '0.85rem' }}>{jsonStr}</code>
         }
         if (typeof value === 'boolean') return value ? 'Yes' : 'No'
         return String(value)
@@ -189,9 +204,12 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
                                                                     borderRadius: '4px',
                                                                     display: 'inline-flex',
                                                                     alignItems: 'center',
-                                                                    gap: '4px'
+                                                                    gap: '4px',
+                                                                    maxWidth: '45%',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
                                                                 }}>
-                                                                    {renderValue(oldValue)}
+                                                                    {renderValue(oldValue, field)}
                                                                 </span>
                                                                 <span style={{ color: '#94a3b8' }}>→</span>
                                                                 <span style={{ 
@@ -201,9 +219,12 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
                                                                     borderRadius: '4px',
                                                                     display: 'inline-flex',
                                                                     alignItems: 'center',
-                                                                    gap: '4px'
+                                                                    gap: '4px',
+                                                                    maxWidth: '45%',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
                                                                 }}>
-                                                                    {renderValue(newValue)}
+                                                                    {renderValue(newValue, field)}
                                                                 </span>
                                                             </div>
                                                         </div>
