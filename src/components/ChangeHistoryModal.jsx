@@ -66,8 +66,13 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
     }
 
     const renderValue = (value) => {
-        if (value === null || value === undefined) return <em style={{ color: '#94a3b8' }}>empty</em>
-        if (typeof value === 'object') return <code>{JSON.stringify(value, null, 2)}</code>
+        if (value === null || value === undefined || value === '') {
+            return <em style={{ color: '#94a3b8', fontSize: '0.85rem' }}>(empty)</em>
+        }
+        if (typeof value === 'object') {
+            const jsonStr = JSON.stringify(value, null, 2)
+            return <code style={{ fontSize: '0.85rem', display: 'block', maxWidth: '100%', overflow: 'auto' }}>{jsonStr}</code>
+        }
         if (typeof value === 'boolean') return value ? 'Yes' : 'No'
         return String(value)
     }
@@ -167,18 +172,39 @@ export default function ChangeHistoryModal({ entityType, entityId, entityName, o
                                                     {changedFields.map(({ field, oldValue, newValue }) => (
                                                         <div key={field} className="change-field">
                                                             <div className="change-field-label">
-                                                                {getFieldLabel(field)}
+                                                                {getFieldLabel(field)}:
                                                             </div>
-                                                            <div className="change-field-values">
-                                                                <div className="change-old-value">
-                                                                    <span className="value-label">Before:</span>
+                                                            <div style={{ 
+                                                                fontSize: '0.85rem', 
+                                                                color: '#475569',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                flexWrap: 'wrap'
+                                                            }}>
+                                                                <span style={{ 
+                                                                    background: '#fef2f2', 
+                                                                    border: '1px solid #fca5a5',
+                                                                    padding: '4px 8px',
+                                                                    borderRadius: '4px',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px'
+                                                                }}>
                                                                     {renderValue(oldValue)}
-                                                                </div>
-                                                                <div className="change-arrow">→</div>
-                                                                <div className="change-new-value">
-                                                                    <span className="value-label">After:</span>
+                                                                </span>
+                                                                <span style={{ color: '#94a3b8' }}>→</span>
+                                                                <span style={{ 
+                                                                    background: '#f0fdf4', 
+                                                                    border: '1px solid #86efac',
+                                                                    padding: '4px 8px',
+                                                                    borderRadius: '4px',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px'
+                                                                }}>
                                                                     {renderValue(newValue)}
-                                                                </div>
+                                                                </span>
                                                             </div>
                                                         </div>
                                                     ))}

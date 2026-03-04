@@ -37,23 +37,51 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, on
                     <span className="status-icon">{icon}</span>
                     <span className="status-label">{label}</span>
                 </div>
-                {isEditor && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        <button className="icon-btn-edit" onClick={() => onEdit(vehicle)} title="Edit Vehicle">
-                            ✎
-                        </button>
-                        {isAdmin && onDelete && (
-                            <button
-                                className="icon-btn-delete"
-                                onClick={() => onDelete(vehicle)}
-                                title="Delete Vehicle (soft delete)"
-                                aria-label="Delete vehicle"
-                            >
-                                🗑
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <button 
+                        className="icon-btn-changelog" 
+                        onClick={() => onViewHistory(vehicle)}
+                        title="View change history"
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#94a3b8',
+                            cursor: 'pointer',
+                            fontSize: '1.1rem',
+                            padding: '4px 6px',
+                            borderRadius: '4px',
+                            transition: 'all 0.2s',
+                            lineHeight: 1
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(148, 163, 184, 0.1)'
+                            e.currentTarget.style.color = '#cbd5e1'
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'none'
+                            e.currentTarget.style.color = '#94a3b8'
+                        }}
+                    >
+                        📜
+                    </button>
+                    {isEditor && (
+                        <>
+                            <button className="icon-btn-edit" onClick={() => onEdit(vehicle)} title="Edit Vehicle">
+                                ✎
                             </button>
-                        )}
-                    </div>
-                )}
+                            {isAdmin && onDelete && (
+                                <button
+                                    className="icon-btn-delete"
+                                    onClick={() => onDelete(vehicle)}
+                                    title="Delete Vehicle (soft delete)"
+                                    aria-label="Delete vehicle"
+                                >
+                                    🗑
+                                </button>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* Identity Section */}
@@ -95,35 +123,6 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, on
             <div className="card-footer">
                 <button className="btn-book-now" onClick={() => onBook(vehicle)}>
                     <span style={{ marginRight: '6px' }}>📝</span> RESERVE
-                </button>
-                <button 
-                    className="btn-changelog" 
-                    onClick={() => onViewHistory(vehicle)}
-                    title="View change history"
-                    style={{
-                        background: '#334155',
-                        border: 'none',
-                        color: '#cbd5e1',
-                        padding: '10px 16px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '0.9rem',
-                        fontWeight: '600',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#475569'
-                        e.currentTarget.style.transform = 'translateY(-1px)'
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#334155'
-                        e.currentTarget.style.transform = 'translateY(0)'
-                    }}
-                >
-                    📜
                 </button>
             </div>
         </div>

@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { CalendarGridSkeleton } from './LoadingSkeleton'
+import FilterModal from './FilterModal'
 import './CalendarOverviewModal.css'
 
 export default function CalendarOverviewModal({ onClose }) {
     const [currentMonth, setCurrentMonth] = useState(new Date())
-    const [viewMode, setViewMode] = useState('weekly') // 'weekly' | 'monthly', default weekly
+    const [viewMode, setViewMode] = useState('monthly') // 'weekly' | 'monthly', default monthly
     const [bookings, setBookings] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedBooking, setSelectedBooking] = useState(null)
     const [allVehicles, setAllVehicles] = useState([])
     const [selectedVehicleIds, setSelectedVehicleIds] = useState([])
+    const [showFilterModal, setShowFilterModal] = useState(false)
 
     // Week range for weekly view (Monday–Sunday, ISO)
     const getWeekStart = (d) => {
@@ -201,61 +203,46 @@ export default function CalendarOverviewModal({ onClose }) {
                     <div className="calendar-overview-icon">📅</div>
                     <div style={{ flex: 1 }}></div>
                     
-                    {/* Vehicle Filter Dropdown */}
-                    <div style={{ position: 'relative' }}>
-                        <select
-                            multiple
-                            value={selectedVehicleIds}
-                            onChange={(e) => {
-                                const selected = Array.from(e.target.selectedOptions, option => option.value)
-                                setSelectedVehicleIds(selected)
-                            }}
-                            className="calendar-vehicle-filter"
-                            title="Filter by vehicles (hold Ctrl/Cmd to select multiple)"
-                            style={{
-                                background: '#334155',
-                                border: '1px solid #475569',
-                                borderRadius: '6px',
-                                color: '#e2e8f0',
-                                padding: '6px 12px',
-                                fontSize: '0.9rem',
-                                cursor: 'pointer',
-                                maxHeight: '120px',
-                                minWidth: '150px'
-                            }}
-                        >
-                            {allVehicles.map(v => (
-                                <option key={v.id} value={v.id} style={{ padding: '4px' }}>
-                                    {v.name}
-                                </option>
-                            ))}
-                        </select>
+                    {/* Filter Button */}
+                    <button 
+                        type="button" 
+                        onClick={() => setShowFilterModal(true)}
+                        className="calendar-filter-btn"
+                        title="Filter vehicles"
+                        style={{
+                            background: selectedVehicleIds.length > 0 ? '#3b82f6' : '#334155',
+                            border: 'none',
+                            color: '#fff',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = selectedVehicleIds.length > 0 ? '#2563eb' : '#475569'
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = selectedVehicleIds.length > 0 ? '#3b82f6' : '#334155'
+                        }}
+                    >
+                        🔍 Filter
                         {selectedVehicleIds.length > 0 && (
-                            <button
-                                onClick={() => setSelectedVehicleIds([])}
-                                style={{
-                                    position: 'absolute',
-                                    top: '-8px',
-                                    right: '-8px',
-                                    background: '#ef4444',
-                                    color: '#fff',
-                                    border: 'none',
-                                    borderRadius: '50%',
-                                    width: '20px',
-                                    height: '20px',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontWeight: 'bold'
-                                }}
-                                title="Clear vehicle filter"
-                            >
-                                ×
-                            </button>
+                            <span style={{
+                                background: '#1e40af',
+                                borderRadius: '10px',
+                                padding: '2px 6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold'
+                            }}>
+                                {selectedVehicleIds.length}
+                            </span>
                         )}
-                    </div>
+                    </button>
 
                     <button 
                         type="button" 
@@ -513,6 +500,18 @@ export default function CalendarOverviewModal({ onClose }) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Filter Modal */}
+            {showFilterModal && (
+                <FilterModal
+                    onClose={() => setShowFilterModal(false)}
+                    onApplyFilter={(vehicleIds) => {
+                        setSelectedVehicleIds(vehicleIds || [])
+                        setShowFilterModal(false)
+                    }}
+                    initialSelectedVehicles={selectedVehicleIds}
+                />
             )}
         </div>
     )
