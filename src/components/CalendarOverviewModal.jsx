@@ -230,7 +230,7 @@ export default function CalendarOverviewModal({ onClose }) {
                             e.currentTarget.style.background = selectedVehicleIds.length > 0 ? '#3b82f6' : '#334155'
                         }}
                     >
-                        🔽 Filter
+                        <span style={{ fontSize: '1.1rem' }}>▼</span> Filter
                         {selectedVehicleIds.length > 0 && (
                             <span style={{
                                 background: '#1e40af',
