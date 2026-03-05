@@ -1,10 +1,10 @@
 --==========================================
--- 安全檢查：確認 vehicles table 的欄位
--- 這個 SQL 只查詢，不會修改任何資料
--- 可以安全地在 Supabase SQL Editor 執行
+-- Safety check: verify vehicles table columns
+-- This SQL is read-only and does not modify any data.
+-- Safe to run in Supabase SQL Editor.
 --==========================================
 
--- 1. 查看 vehicles table 的所有欄位
+-- 1. List all columns of the vehicles table
 SELECT 
     column_name,
     data_type,
@@ -14,7 +14,7 @@ FROM information_schema.columns
 WHERE table_name = 'vehicles'
 ORDER BY ordinal_position;
 
--- 2. 檢查 parameter_change_notes 欄位是否存在
+-- 2. Check whether parameter_change_notes column exists
 SELECT 
     CASE 
         WHEN EXISTS (
@@ -23,11 +23,11 @@ SELECT
             WHERE table_name = 'vehicles' 
             AND column_name = 'parameter_change_notes'
         ) 
-        THEN '✅ parameter_change_notes 欄位已存在'
-        ELSE '❌ parameter_change_notes 欄位不存在（需要新增）'
+        THEN '✅ parameter_change_notes column exists'
+        ELSE '❌ parameter_change_notes column missing (run migration to add it)'
     END as status;
 
--- 3. 查看現有的 vehicles 資料（前 5 筆）
+-- 3. Sample existing vehicles (first 5 rows)
 SELECT 
     id,
     name,

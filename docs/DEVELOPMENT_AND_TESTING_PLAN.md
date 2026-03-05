@@ -1,385 +1,311 @@
-# 開發與測試計劃（Development & Testing Plan）
+# Development & Testing Plan
 
-**目標：** 配合 Dashboard 全需求改動，建立可重複、穩定的開發節奏，並以 **Unit Test、Regression / E2E Test** 確保品質與不影響線上。
+**Goal:** Align with the full Dashboard requirements: establish a repeatable, stable development rhythm and ensure quality and no impact on production via **Unit Tests** and **Regression / E2E Tests**.
 
-**與主計劃關係：** 本文件對應「Dashboard 全需求計劃」的實作與驗證；分批上線與環境分離見主計劃「不影響線上的測試與上線建議」。
-
----
-
-## 一、現有測試資產
-
-| 類型 | 工具 | 位置 | 覆蓋範圍 |
-|------|------|------|----------|
-| Unit | Vitest | `vite.config.js` → `test`、`src/test/setup.js` | `src/lib/database.test.js`、`hardwareConfig.test.js`、`constants.test.js` |
-| E2E | Playwright | `playwright.config.js`、`e2e/*.spec.js` | `app.spec.js`（未登入）、`dashboard.spec.js`（需 E2E_AUTH_EMAIL/PASSWORD） |
-| CI | GitHub Actions | `.github/workflows/test.yml`（若有） | 依現有設定：unit + e2e |
-
-**指令：**
-- `npm run test` / `npm run test:run` / `npm run test:unit`：Vitest
-- `npm run test:e2e`：Playwright（會起 port 5175）
+**Relation to main plan:** This document covers implementation and verification for the “Dashboard full requirements plan”; batch rollout and environment separation follow the main plan’s “testing and release without impacting production” section.
 
 ---
 
-## 二、開發計劃（與分批上線對齊）
+## 1. Existing test assets
 
-每批開發完成後，必須通過對應的 **Unit + Regression/E2E** 再合併或上線。
+| Type | Tool | Location | Coverage |
+|------|------|----------|----------|
+| Unit | Vitest | `vite.config.js` → `test`, `src/test/setup.js` | `src/lib/database.test.js`, `hardwareConfig.test.js`, `constants.test.js` |
+| E2E | Playwright | `playwright.config.js`, `e2e/*.spec.js` | `app.spec.js` (unauthenticated), `dashboard.spec.js` (requires E2E_AUTH_EMAIL/PASSWORD) |
+| CI | GitHub Actions | `.github/workflows/test.yml` (if present) | Per current config: unit + e2e |
 
-### 批次 1：純 UI／文案（低風險）
-
-**範圍：** Header 移除搜尋、Fleet 區塊、Decommissioned、卡片狀態與火箭、Calendar 改為 Schedule、Today／週月切換。
-
-**開發要點：**
-- 改動集中於 `Header.jsx`、`Dashboard.jsx`、`EditVehicleModal.jsx`、`VehicleCard.jsx`、`CalendarOverviewModal.jsx` 及相關 CSS。
-- 不改 API、不改 DB schema。
-
-**交付物：**
-- 程式變更 + 對應 E2E 更新（見下「Regression 清單」）。
-- 本批完成後跑完整 regression，通過再上線。
+**Commands:**
+- `npm run test` / `npm run test:run` / `npm run test:unit`: Vitest
+- `npm run test:e2e`: Playwright (starts app on port 5175)
 
 ---
 
-### 批次 2：查詢與過濾邏輯（低風險）
+## 2. Development plan (aligned with batch rollout)
 
-**範圍：** 取消預約 `deleted_at`、Reserve 月曆週一、月曆箭頭置中、硬體預覽一致性。
+Each batch must pass the corresponding **Unit + Regression/E2E** before merge or release.
 
-**開發要點：**
-- `BookingModal.jsx` 查詢加 `.is('deleted_at', null)`；`Dashboard.jsx` next_booking 同様。
-- 月曆表頭與 offset 改為週一為第一天；CSS 調整箭頭與月份置中。
-- 確認車輛列表與編輯表單的 hw_config 讀寫一致。
+### Batch 1: UI / copy only (low risk)
 
-**交付物：**
-- 程式變更。
-- 可補 unit：若 `database.js` 有 `getBookingsByUser` 或類似對外介面，可加「含 deleted_at 過濾」的測試（或 mock 層驗證 query 參數）。
+**Scope:** Remove search from Header, Fleet section, Decommissioned status; card status and rocket icon; rename Calendar to Schedule; Today button and week/month toggle.
 
----
+**Implementation focus:** Changes in `Header.jsx`, `Dashboard.jsx`, `EditVehicleModal.jsx`, `VehicleCard.jsx`, `CalendarOverviewModal.jsx` and related CSS. No API or DB schema changes.
 
-### 批次 3：表單與欄位（中風險）
-
-**範圍：** Department 必填、Parameter Change 欄位、Pilot 非必／Who ordered 必填、My Bookings 日期顯示。
-
-**開發要點：**
-- EditVehicleModal：Department 下拉（必填）、Parameter Change 文字欄位；payload 與 DB 對齊。
-- BookingModal：validateForm 調整；Who ordered 必填邏輯。
-- My Bookings：確認 `formatRange(start_time, end_time)` 與 API 回傳欄位，必要時修正顯示或 API select。
-
-**交付物：**
-- 程式 + 若有 migration（例如 vehicles 新欄位）需在 staging 驗證。
-- Unit：EditVehicleModal 表單驗證（Department 必填、Parameter Change 有值時寫入 payload）可用 React Testing Library + mock；BookingModal 驗證邏輯可抽成純函數再單測。
+**Deliverables:** Code changes + E2E updates (see “Regression list” below). Run full regression after this batch before release.
 
 ---
 
-### 批次 4：新功能（Filter、Schedule 篩選、Changelog）（中風險）
+### Batch 2: Queries and filtering (low risk)
 
-**範圍：** 主版 Filter 彈窗、Schedule 內篩選、Changelog 卡片圖示＋彈窗（3 筆＋Show More 捲動）。
+**Scope:** Exclude cancelled bookings via `deleted_at`; Reserve calendar week starts Monday; center calendar arrows and month; consistent hardware preview.
 
-**開發要點：**
-- Filter：Header 左側按鈕、彈窗元件、Dashboard 依 `selectedVehicleIds` 過濾。
-- Schedule：月/週＋車輛篩選狀態、查詢結果前端過濾。
-- Changelog：VehicleCard 圖示、ChangeHistoryModal 或包一層（預設 3 筆、Show More 後可捲動）；Profile 移除 Change Log 選單。
+**Implementation focus:** Add `.is('deleted_at', null)` in `BookingModal.jsx` and `Dashboard.jsx` (next_booking). Calendar header and offset: Monday as first day; CSS for arrow and month alignment. Ensure vehicle list and edit form hw_config read/write are consistent.
 
-**交付物：**
-- 程式 + 新元件。
-- Unit：Filter 依 department 分組、選中 id 列表的邏輯可抽成純函數單測。
-- E2E：新增/更新場景（見下「Regression 清單」）。
+**Deliverables:** Code changes. Optional unit tests for `database.js` (e.g. `getBookingsByUser`, `deleted_at` filtering).
 
 ---
 
-### 批次 5：Iza 審核與通知（高風險）
+### Batch 3: Forms and fields (medium risk)
 
-**範圍：** `bookings.status`、`approval_requests`、`notifications`、Reserve 分流、通知區、Approve/Reject/Edit。
+**Scope:** Department required; Parameter Change field; Pilot optional / Who ordered required; My Bookings date display.
 
-**開發要點：**
-- DB migration（可逆、向後相容）在 staging 先跑。
-- BookingModal：Marketing 車輛且非審核者 → 寫入 pending_approval + approval_request + notification。
-- 通知區：僅審核者（izabela@deltaquad.com、a.chang@deltaquad.com）可見；Approve/Reject/Edit 行為與主計劃一致。
+**Implementation focus:** EditVehicleModal: Department dropdown (required), Parameter Change text field; align payload with DB. BookingModal: adjust validateForm; Who ordered required. My Bookings: ensure `formatRange(start_time, end_time)` matches API and display.
 
-**交付物：**
-- Migration 腳本 + 程式。
-- Unit：審核者名單判斷、status 分支邏輯可單測；DB 層用 mock。
-- E2E：審核流程單獨 spec，用測試帳號在 staging 跑。
+**Deliverables:** Code + migrations if needed (e.g. new vehicle columns); verify on staging. Unit: form validation (Department required, Parameter Change in payload); BookingModal validation as pure function.
 
 ---
 
-## 三、測試策略總覽
+### Batch 4: New features — Filter, Schedule filter, Changelog (medium risk)
 
-```mermaid
-flowchart LR
-  subgraph unit [Unit Tests]
-    U1[lib: database, hardwareConfig, changeLogger]
-    U2[helpers and validators]
-    U3[optional: component logic]
-  end
-  subgraph e2e [E2E / Regression]
-    E1[App and Login]
-    E2[Dashboard and Schedule]
-    E3[Reserve and Bookings]
-    E4[Filter and Changelog]
-    E5[Approval flow]
-  end
-  subgraph ci [CI]
-    CI1[test:run on push/PR]
-    CI2[test:e2e optional or nightly]
-  end
-  unit --> ci
-  e2e --> ci
-```
+**Scope:** Main Filter modal; Schedule vehicle filter; Changelog icon on cards + modal (3 entries + Show More scroll).
 
-- **Unit**：快速、不依賴網路與 DB，鎖定單一模組行為；每次改動相關模組後必跑。
-- **E2E / Regression**：模擬真實操作，確保關鍵流程未被改壞；每批完成後跑完整套，上線前再跑一次。
-- **CI**：至少跑 `npm run test:run`；E2E 可選每 PR 跑或僅 main / 定時跑 staging。
+**Implementation focus:** Filter: button left of Schedule, modal, Dashboard filter by `selectedVehicleIds`. Schedule: week/month + vehicle filter, front-end filter of results. Changelog: icon on VehicleCard, ChangeHistoryModal (default 3, Show More to scroll); remove Change Log from Profile menu.
+
+**Deliverables:** Code + new components. Unit: Filter grouping by department and selected id list as pure functions. E2E: add/update scenarios (see Regression list).
 
 ---
 
-## 四、Unit Test 計劃
+### Batch 5: Iza approval and notifications (high risk)
 
-### 4.1 既有與維持
+**Scope:** `bookings.status`, `approval_requests`, `notifications`; Reserve flow split; notification area; Approve / Reject / Edit.
 
-- **`src/lib/database.test.js`**：維持現有 mock Supabase 寫法；若有新方法（例如依 `deleted_at` 過濾、getBookingsByUser 欄位）補測試。
-- **`src/lib/hardwareConfig.test.js`**：維持；若新增 parameter_change 相關欄位不影響 hardwareConfig 則無需改。
-- **`src/lib/constants.test.js`**：維持。
+**Implementation focus:** DB migration (reversible, backward compatible) on staging first. BookingModal: for Marketing vehicles and non-approver user → write `pending_approval` + approval_request + notification. Notification area: visible only to approvers (e.g. izabela@deltaquad.com, a.chang@deltaquad.com); Approve/Reject/Edit per main plan.
 
-### 4.2 建議新增／擴充
-
-| 檔案／模組 | 測試重點 |
-|------------|----------|
-| **changeLogger.js** | `getChangeHistory(entityType, entityId, limit)` 回傳形狀；`formatChangedFields`、`getFieldLabel` 純函數（可 mock supabase）。 |
-| **database.js** | 若有 `getBookingsByUser` 或過濾 `deleted_at` 的介面，驗證呼叫參數或回傳結構；`deleteBooking` 已有，可補「寫入 deleted_at」的 mock 驗證。 |
-| **Filter 邏輯** | 若篩選「依 department 分組 → 車輛 id 列表」抽成 `src/lib/filterVehicles.js` 或類似，單測：輸入 vehicles 陣列，輸出分組與選中 id 過濾結果。 |
-| **BookingModal 驗證** | 將 `validateForm` 抽成接受 (formData, selectedDates, whoOrderedMode, whoOrderedCustom) 的純函數，單測：Pilot 可空、Who ordered 在 others 時必填、Project 必填。 |
-| **EditVehicleModal 驗證** | 同上，Department 必填、Parameter Change 可選，單測 payload 形狀。 |
-
-### 4.3 撰寫原則
-
-- 依賴 Supabase / Auth 的一律 **mock**，不在 unit 打真實後端。
-- 優先測 **純函數** 與 **邊界條件**（空陣列、null、極端日期）。
-- 檔名：`*.test.js` 或 `*.spec.js`，與現有一致。
+**Deliverables:** Migration scripts + code. Unit: approver list and status branching (mock DB). E2E: approval flow in separate spec, run on staging with test accounts.
 
 ---
 
-## 五、Regression / E2E 計劃（穩定化）
+## 3. Test strategy overview
 
-### 5.1 穩定 Regression 的原則
-
-1. **選擇器優先順序**  
-   - 優先使用 **role + name**（`getByRole('button', { name: /schedule/i })`）。  
-   - 其次 **data-testid**（例如 `data-testid="schedule-trigger"`），僅在關鍵按鈕／表單使用，避免過多。  
-   - 避免僅依 class、DOM 層級或文案長句，以降低 UI 小改就壞的機率。
-
-2. **E2E 與環境**  
-   - 本機：`npm run test:e2e` 對應 localhost:5175（playwright.config 內 webServer）。  
-   - CI：同一 config，CI 起 app；或 E2E 僅在 main / 定時跑，對應 staging URL（需 BASE_URL 與測帳號）。  
-   - 認證：沿用 `E2E_AUTH_EMAIL` / `E2E_AUTH_PASSWORD`；Regression 清單中「需登入」的案例一律依此登入再操作。
-
-3. **資料與冪等**  
-   - 不依賴「某台車叫 R&D-125 一定存在」；改為「登入後有車輛列表或空狀態」或「某個 data-testid 的區塊存在」。  
-   - 若有建立預約／車輛，盡量用可辨識的專案名或後綴，並在 after 或專用 cleanup 清理，避免累積造成衝突。
-
-4. **等待與重試**  
-   - 使用 `expect(locator).toBeVisible({ timeout: 5000 })` 等明確等待，避免固定 `page.waitForTimeout`。  
-   - Playwright 的 retries（CI 建議 2）保留，並定期檢視 flaky 案例，修正選擇器或流程。
-
-### 5.2 Regression 清單（E2E 場景）
-
-以下場景應在 **每批完成後** 與 **上線前** 全過。E2E 檔可依模組拆成多個 spec，但清單保持一份以便勾選。
-
-| # | 場景 | 預期 | 備註 |
-|---|------|------|------|
-| R1 | 未登入 → 進入首頁 | 導向 login，Sign In 可見 | 現有 app.spec |
-| R2 | 登入頁結構 | 有 Google 登入、UAV Fleet Command 等 | 現有 app.spec |
-| R3 | 登入後 Dashboard | Schedule（原 Calendar Overview）按鈕可見、車輛列表或空狀態可見 | 更新為 Schedule；dashboard.spec |
-| R4 | 開啟 Schedule 彈窗 | 標題為 Schedule（或 Fleet Schedule） | 新／更新 |
-| R5 | 車輛卡片：RESERVE | 點 RESERVE 開預約彈窗，標題含 Reserve / Reserving | 現有 dashboard.spec 可擴充 |
-| R6 | 預約彈窗：必填與選填 | Project 必填、Who ordered 必填、Pilot 可空；送出驗證錯誤時有訊息 | 新 |
-| R7 | 編輯車輛 | 點編輯開 Edit Vehicle，無 Decommissioned 選項，有 Department 下拉 | 新／更新 |
-| R8 | 主版 Filter | 點 Filter 開彈窗，可選部門／車輛，確認後列表只顯示所選 | 新 |
-| R9 | Changelog | 卡片上有 changelog 圖示，點擊開彈窗、可見最近紀錄與 Show More | 新 |
-| R10 | Iza 審核（staging） | 用 a.chang 登入 → 預約 Marketing 車輛 → 通知區出現 → Approve/Reject/Edit 行為正確 | 新；可單獨 spec，僅在有審核者帳號的環境跑 |
-
-### 5.3 E2E 檔案建議結構
-
-- `e2e/app.spec.js`：未登入、登入頁（維持）。
-- `e2e/dashboard.spec.js`：登入後 Dashboard、Schedule、RESERVE 開 modal、Filter、Changelog（擴充）。
-- `e2e/booking.spec.js`（可選）：預約表單必填、日期選擇、衝突提示、tooltip。
-- `e2e/approval.spec.js`（可選）：僅在設定了審核者帳號時跑；Marketing 預約 → 通知 → Approve/Reject/Edit。
-
-所有「需登入」的案例統一用 `ensureLoggedIn` 或共用 fixture，並將「Schedule」按鈕名稱從 Calendar Overview 改為 Schedule。
+- **Unit:** Fast, no network/DB; target single modules; run after relevant changes.
+- **E2E / Regression:** Simulate real flows; ensure key paths are intact; run full set after each batch and before release.
+- **CI:** At least `npm run test:run`; E2E optional per PR or on main / scheduled staging runs.
 
 ---
 
-## 六、CI 與在地執行
+## 4. Unit test plan
 
-### 6.1 本地開發流程
+### 4.1 Existing and maintained
 
-1. 功能開發在分支完成後：  
-   `npm run test:run` → 全過再 `npm run test:e2e`（可選，但每批結束前必跑）。
-2. 提交前：跑一次完整 Regression 清單（至少 R1–R5；若有 Filter/Changelog 則含 R7–R9）。
-3. 若專案有 pre-push hook：可設定執行 `npm run test:run`，避免忘記。
+- **`src/lib/database.test.js`:** Keep current Supabase mock style; add tests for new methods (e.g. `deleted_at` filtering, getBookingsByUser).
+- **`src/lib/hardwareConfig.test.js`:** Keep; no change if parameter_change fields do not affect hardwareConfig.
+- **`src/lib/constants.test.js`:** Keep.
 
-### 6.2 CI 建議
+### 4.2 Suggested additions
 
-- **每次 push/PR**：執行 `npm run test:run`（Unit）。失敗則不可合併。
-- **E2E**：  
-  - 選項 A：同 workflow 起 `npx vite --port 5175`，跑 `npm run test:e2e`（不設 E2E_AUTH_* 則跳過需登入案例）。  
-  - 選項 B：僅在 merge 到 main 或定時（如 nightly）對 staging URL 跑完整 E2E（含登入與 R10）。
-- 若 E2E 不穩定：先以 Unit 必過為主，E2E 僅在 main 或 nightly 跑，並在計劃中註明「Regression 手動勾選 + 自動 E2E 子集」。
+| Module | Focus |
+|--------|--------|
+| **changeLogger.js** | `getChangeHistory(entityType, entityId, limit)` shape; `formatChangedFields`, `getFieldLabel` as pure functions (mock supabase). |
+| **database.js** | If `getBookingsByUser` or `deleted_at` filtering exists: verify call args or return shape; `deleteBooking` mock for `deleted_at` write. |
+| **Filter logic** | If “group by department → vehicle id list” is in `src/lib/filterVehicles.js` (or similar): unit test input vehicles, output grouping and selected ids. |
+| **BookingModal validation** | Extract `validateForm` as pure (formData, selectedDates, whoOrderedMode, whoOrderedCustom); unit: Pilot optional, Who ordered required when others, Project required. |
+| **EditVehicleModal validation** | Department required, Parameter Change optional; unit test payload shape. |
 
----
+### 4.3 Principles
 
-## 七、每批檢查表（開發 + 測試）
-
-每批完成時可依此勾選，確保不影響線上且 regression 穩定。
-
-**批次 1**
-- [ ] 程式改動完成（Header、Fleet、Decommissioned、卡片、Schedule、Today/週月）
-- [ ] `npm run test:run` 通過
-- [ ] E2E：R1–R5 更新（Schedule 按鈕名稱）並通過
-- [ ] 無新增 console error，手動快速點擊關鍵路徑
-
-**批次 2**
-- [ ] 查詢與月曆改動完成
-- [ ] Unit：若有 database 過濾邏輯，補測試
-- [ ] E2E：R3–R5 仍過；取消預約後月曆不顯示可手動驗證
-
-**批次 3**
-- [ ] 表單與欄位完成；migration 若有則在 staging 跑過
-- [ ] Unit：驗證邏輯單測（Department、Who ordered、Parameter Change）
-- [ ] E2E：R6–R7 加入／更新並通過
-
-**批次 4**
-- [ ] Filter、Schedule 篩選、Changelog 完成
-- [ ] Unit：Filter 分組／過濾邏輯單測
-- [ ] E2E：R8–R9 加入並通過
-
-**批次 5**
-- [ ] DB migration 在 staging 驗證；審核流程與通知區完成
-- [ ] Unit：審核者判斷、status 分支
-- [ ] E2E：R10 在 staging 用 a.chang / izabela 跑過
-- [ ] 回滾方案與監控要點已寫入主計劃
+- Mock all Supabase / Auth in unit tests; no real backend.
+- Prioritize **pure functions** and **edge cases** (empty array, null, extreme dates).
+- File naming: `*.test.js` or `*.spec.js`, consistent with existing.
 
 ---
 
-## 八、與主計劃的對應
+## 5. Regression / E2E plan (stabilization)
 
-- **環境分離、分批上線、DB 遷移、Feature Flag、回滾**：見主計劃「不影響線上的測試與上線建議」。
-- **本文件**：定義「每批要做什麼開發」與「每批要通過哪些 Unit + Regression」，以及如何讓 Regression 穩定（選擇器、環境、資料、CI）。
+### 5.1 Selector priority
 
-實作時以「批次」為單位開發，每批完成即跑對應 Unit + Regression，通過後再合併／上線，以維持穩定且不影響線上產品。
+1. Prefer **role + name** (e.g. `getByRole('button', { name: /schedule/i })`).
+2. Then **data-testid** (e.g. `data-testid="schedule-trigger"`) for key buttons/forms only.
+3. Avoid relying only on class, DOM depth, or long copy to reduce breakage on small UI changes.
 
----
+### 5.2 E2E and environment
 
-## 九、批次步驟（開新視窗開發與測試用）
+- Local: `npm run test:e2e` against localhost:5175 (playwright webServer).
+- CI: same config or E2E only on main/scheduled against staging URL (BASE_URL + test account).
+- Auth: use `E2E_AUTH_EMAIL` / `E2E_AUTH_PASSWORD` for login-required cases.
 
-以下每批可單獨開一個視窗，從「開發步驟」做到「測試步驟」，全部勾選後再進行下一批。
+### 5.3 Data and idempotency
 
----
+- Do not depend on “vehicle R&D-125 must exist”; use “after login, vehicle list or empty state” or “block with data-testid exists”.
+- Use identifiable project names/suffixes for created bookings/vehicles; clean up in after or dedicated cleanup.
 
-### 批次 1：純 UI／文案
+### 5.4 Waits and retries
 
-**開發步驟**
+- Use explicit waits (e.g. `expect(locator).toBeVisible({ timeout: 5000 })`); avoid fixed `page.waitForTimeout`.
+- Keep Playwright retries (e.g. 2 in CI); review flaky cases and fix selectors or flow.
 
-1. 開分支（建議）：`git checkout -b feature/batch-1-ui-copy`
-2. **Header.jsx**：移除搜尋相關 state（`showSearch`）、搜尋輸入框、搜尋圖示按鈕。
-3. **Dashboard.jsx**：移除 `<section className="dashboard-fleet-section">` 及其內 `<h2 className="dashboard-fleet-title">Fleet</h2>`。
-4. **EditVehicleModal.jsx**：從 status `<select>` 刪除 `<option value="Decommissioned">`。
-5. **VehicleCard.jsx**：從 `STATUS_Map` 移除 `'Decommissioned'`；`getStatusStyle` 中「Available」改為顯示 "Available"（不要 "Ready"）；移除卡片左側 `icon-box` 內的火箭（或整個 icon-box）。
-6. **Header.jsx**：將「Calendar Overview」按鈕文字改為「Schedule」；`data-testid` 若有可改為 `schedule-trigger`。
-7. **CalendarOverviewModal.jsx**：彈窗標題改為「Schedule」或「Fleet Schedule」；新增「Today」按鈕（`setCurrentMonth(new Date())`）；新增月／週切換按鈕，預設週視圖；加強 `.calendar-day-cell.today` 樣式。
-8. **CalendarOverviewModal.jsx**：實作週視圖（`viewMode: 'weekly' | 'monthly'`，預設 `'weekly'`）。
-9. 存檔後執行 `npm run build` 確認無錯。
+### 5.5 Regression checklist (E2E scenarios)
 
-**測試步驟**
+Run after each batch and before release.
 
-1. 執行 Unit：`npm run test:run` → 應全過。
-2. 更新 E2E：在 `e2e/dashboard.spec.js` 將「Calendar Overview」改為「Schedule」（`getByRole('button', { name: /schedule/i })`）；Fleet Calendar Overview 標題改為 Schedule。
-3. 執行 E2E：`npm run test:e2e`（未設 E2E_AUTH_* 則跳過需登入案例）；若有設，確認 R1–R5 對應情境通過。
-4. 手動：登入後確認無搜尋、無 Fleet 標題、卡片無火箭、狀態為 Available/Mission/Maintenance、Schedule 按鈕與彈窗、Today 與週/月切換正常。
-5. 勾選完成後再合併或進行批次 2。
+| # | Scenario | Expected | Notes |
+|---|----------|----------|-------|
+| R1 | Unauthenticated → home | Redirect to login, Sign In visible | app.spec |
+| R2 | Login page structure | Google sign-in, UAV Fleet Command, etc. | app.spec |
+| R3 | Post-login Dashboard | Schedule button visible, vehicle list or empty state | dashboard.spec |
+| R4 | Open Schedule modal | Title Schedule (or Fleet Schedule) | New/update |
+| R5 | Vehicle card RESERVE | Click RESERVE opens booking modal, title Reserve/Reserving | dashboard.spec |
+| R6 | Booking modal required/optional | Project required, Who ordered required, Pilot optional; validation message on submit | New |
+| R7 | Edit vehicle | Edit opens Edit Vehicle; no Decommissioned; Department dropdown | New/update |
+| R8 | Main Filter | Click Filter opens modal; select department/vehicles; list shows only selected | New |
+| R9 | Changelog | Changelog icon on card; click opens modal, recent entries + Show More | New |
+| R10 | Iza approval (staging) | Login as a.chang → book Marketing vehicle → notification appears → Approve/Reject/Edit correct | New; separate spec, approver account only |
 
----
+### 5.6 E2E file structure
 
-### 批次 2：查詢與過濾邏輯
+- `e2e/app.spec.js`: Unauthenticated and login page (keep).
+- `e2e/dashboard.spec.js`: Dashboard, Schedule, RESERVE modal, Filter, Changelog (extend).
+- `e2e/booking.spec.js` (optional): Booking form required fields, date picker, conflict warning, tooltip.
+- `e2e/approval.spec.js` (optional): Run only with approver account; Marketing booking → notification → Approve/Reject/Edit.
 
-**開發步驟**
-
-1. 開分支：`git checkout -b feature/batch-2-queries`
-2. **BookingModal.jsx**：在 `fetchExistingBookings` 的 Supabase 查詢加上 `.is('deleted_at', null)`。
-3. **Dashboard.jsx**：在取得 next_booking 的 Supabase 查詢加上 `.is('deleted_at', null)`。
-4. **BookingModal.jsx**：月曆表頭改為 Mon, Tue, …, Sun（週一為首）；日曆格計算改用 `(getDay() + 6) % 7` 讓第一欄為週一。
-5. **BookingModal.css**：`.calendar-header span` 加 `min-height: 32px`、`display: inline-flex`、`align-items: center`；必要時調整 flex 讓箭頭與月份置中。
-6. 確認 **EditVehicleModal** 與 **VehicleCard** 的 hw_config 讀寫一致（payload 含 `hw_config`、列表 refetch）。
-7. 存檔後 `npm run build`。
-
-**測試步驟**
-
-1. `npm run test:run` → 全過。
-2. E2E：R3–R5 再跑一次，應仍過。
-3. 手動：預約一筆後取消，確認 Reserve 彈窗月曆與主版 next booking 不再顯示該筆。
-4. 手動：Reserve 月曆表頭為 Mon–Sun、箭頭與月份置中。
+Use shared `ensureLoggedIn` or fixture for login-required cases; Schedule button name aligned with “Schedule” (not Calendar Overview).
 
 ---
 
-### 批次 3：表單與欄位
+## 6. CI and local execution
 
-**開發步驟**
+### 6.1 Local workflow
 
-1. 開分支：`git checkout -b feature/batch-3-forms`
-2. **EditVehicleModal.jsx**：在 Vehicle Name 下方新增 Department 下拉（必填），選項 R&D、Training、Marketing；納入 formData 與 payload。在 Software Version 下方新增「Parameter Change」文字欄位，納入 formData 與 payload。
-3. **DB**：若 `vehicles` 尚無 `parameter_change_notes`（或同義欄位），撰寫 migration 並在 staging 執行。
-4. **BookingModal.jsx**：移除 Pilot 必填（validateForm 與 required）；Who ordered 改為必填（others 時必填自訂名稱）；標籤加星號與錯誤訊息。
-5. **MyBookings.jsx**：確認 `getBookingsByUser` 回傳 `start_time`、`end_time`；卡片日期使用 `formatRange(b.start_time, b.end_time)`，檢查 CSS 無截斷。
-6. 存檔後 `npm run build`。
+1. After feature work on a branch: `npm run test:run` → then `npm run test:e2e` (optional but required before batch sign-off).
+2. Before commit: run full Regression list (at least R1–R5; R7–R9 if Filter/Changelog done).
+3. If pre-push hook exists: run `npm run test:run`.
 
-**測試步驟**
+### 6.2 CI recommendations
 
-1. `npm run test:run` → 全過；若有驗證純函數可補 unit test。
-2. E2E：新增 R6（預約必填／選填）、R7（編輯車輛有 Department、無 Decommissioned）並通過。
-3. 手動：新增/編輯車輛必填 Department、Parameter Change 可填可存；預約不填 Pilot 可送、Who ordered 必填；My Bookings 多日預約顯示完整區間。
+- **Every push/PR:** Run `npm run test:run` (unit). Block merge on failure.
+- **E2E:** Option A: same workflow starts `npx vite --port 5175`, run `npm run test:e2e` (skip login cases if E2E_AUTH_* not set). Option B: E2E only on merge to main or nightly against staging (including R10).
+- If E2E is flaky: require unit pass; run E2E on main or nightly and document “Regression manual checklist + automated E2E subset”.
 
 ---
 
-### 批次 4：Filter、Schedule 篩選、Changelog
+## 7. Per-batch checklist (development + testing)
 
-**開發步驟**
+**Batch 1**
+- [ ] Code changes done (Header, Fleet, Decommissioned, cards, Schedule, Today/week-month)
+- [ ] `npm run test:run` passes
+- [ ] E2E: R1–R5 updated (Schedule button name) and pass
+- [ ] No new console errors; quick manual smoke of key paths
 
-1. 開分支：`git checkout -b feature/batch-4-filter-changelog`
-2. **Filter**：Header 在 Schedule 左側新增 Filter 圖示＋「Filter」；點擊開彈窗；彈窗內第一層 R&D/Training/Marketing，展開後第二層該部門車輛多選；確認後回傳選中 vehicle id 列表；Dashboard 依 `selectedVehicleIds` 過濾顯示（null = 全部）。
-3. **Schedule**：CalendarOverviewModal 左側新增車輛篩選（多選），月曆只顯示所選車輛的預約；與月/週、Today 並存。
-4. **Changelog**：VehicleCard 加 changelog 圖示，點擊開 ChangeHistoryModal（或包一層）顯示該車輛變更紀錄；預設 3 筆，下方「Show More」展開可捲動全部；Header Profile 選單移除「Change Log」。
-5. 存檔後 `npm run build`。
+**Batch 2**
+- [ ] Query and calendar changes done
+- [ ] Unit: add tests for database filtering if applicable
+- [ ] E2E: R3–R5 still pass; manual check that cancelled booking does not show on calendar
 
-**測試步驟**
+**Batch 3**
+- [ ] Forms and fields done; migrations run on staging if any
+- [ ] Unit: validation tests (Department, Who ordered, Parameter Change)
+- [ ] E2E: R6–R7 added/updated and pass
 
-1. `npm run test:run` → 全過；若有 Filter 純函數可補 unit。
-2. E2E：R8（主版 Filter）、R9（Changelog 圖示與彈窗）加入並通過。
-3. 手動：Filter 選部門／車輛後列表更新；Schedule 內篩選車輛後月曆更新；卡片點 changelog 開彈窗、Show More 可捲動；Profile 無 Change Log。
+**Batch 4**
+- [ ] Filter, Schedule filter, Changelog done
+- [ ] Unit: Filter grouping/filter logic tests
+- [ ] E2E: R8–R9 added and pass
 
----
-
-### 批次 5：Iza 審核與通知
-
-**開發步驟**
-
-1. 開分支：`git checkout -b feature/batch-5-approval`
-2. **DB**：撰寫 migration（`bookings.status`、`approval_requests`、`notifications`），可逆且向後相容；現有 bookings 設 `status = 'confirmed'`；在 staging 先跑。
-3. **BookingModal.jsx**：送出前若車輛為 Marketing 且當前使用者非審核者（izabela@deltaquad.com、a.chang@deltaquad.com），寫入 `status = 'pending_approval'` 並建立 approval_request 與 notification。
-4. **通知區**：Header 或 Profile 下拉新增 Notification；僅審核者可見；列出待審核項目（誰、專案、日期、天數）；每則有 Approve、Reject、Edit。
-5. **Approve**：更新 booking.status = confirmed、approval_request 與通知已讀。
-6. **Reject**：更新 status = rejected，日曆不顯示。
-7. **Edit**：開啟 Reserve 表單預填該筆，儲存後改為 confirmed。
-8. 存檔後 `npm run build`。
-
-**測試步驟**
-
-1. `npm run test:run` → 全過；審核者判斷可單測。
-2. E2E：R10 在 staging 用 a.chang@deltaquad.com（或 izabela）登入，預約 Marketing 車輛、通知區出現、Approve/Reject/Edit 各跑一次驗證。
-3. 手動：非審核者預約 Marketing、僅審核者看到通知；Approve 後日曆顯示、Reject 後不顯示、Edit 後可改再儲存。
+**Batch 5**
+- [ ] DB migration verified on staging; approval flow and notification area done
+- [ ] Unit: approver check and status branching
+- [ ] E2E: R10 on staging with a.chang / izabela
+- [ ] Rollback and monitoring notes in main plan
 
 ---
 
-### 每批完成後通用檢查
+## 8. Relation to main plan
 
-- [ ] `npm run test:run` 通過
-- [ ] `npm run test:e2e` 通過（或該批對應的 R 項）
-- [ ] `npm run build` 通過
-- [ ] 手動走過該批改動的關鍵路徑，無 console error
-- [ ] 再進行下一批或合併上線
+- **Environment separation, batch release, DB migration, feature flags, rollback:** See main plan “testing and release without impacting production”.
+- **This document:** Defines what to build per batch and which Unit + Regression must pass, and how to keep Regression stable (selectors, environment, data, CI).
+
+Develop in batches; run the corresponding Unit + Regression after each batch and only then merge or release.
+
+---
+
+## 9. Step-by-step batch instructions
+
+Each batch can be done in a separate context: complete “Development steps” then “Testing steps”, then proceed to the next batch.
+
+### Batch 1: UI / copy
+
+**Development**
+1. Branch: `git checkout -b feature/batch-1-ui-copy`
+2. **Header.jsx:** Remove search state (`showSearch`), search input, search icon button.
+3. **Dashboard.jsx:** Remove Fleet section and title.
+4. **EditVehicleModal.jsx:** Remove Decommissioned from status `<select>`.
+5. **VehicleCard.jsx:** Remove Decommissioned from STATUS_Map; show "Available" (not "Ready"); remove rocket from card icon box.
+6. **Header.jsx:** Rename “Calendar Overview” to “Schedule”; `data-testid` e.g. `schedule-trigger`.
+7. **CalendarOverviewModal.jsx:** Title “Schedule” or “Fleet Schedule”; Today button; week/month toggle; default week view; `.calendar-day-cell.today` styling.
+8. **CalendarOverviewModal.jsx:** Implement weekly view (`viewMode: 'weekly' | 'monthly'`, default `'weekly'`).
+9. `npm run build` to confirm no errors.
+
+**Testing**
+1. `npm run test:run` → all pass.
+2. E2E: In `e2e/dashboard.spec.js` use “Schedule” (e.g. `getByRole('button', { name: /schedule/i })`).
+3. `npm run test:e2e`; if E2E_AUTH_* set, confirm R1–R5 pass.
+4. Manual: no search, no Fleet title, no rocket, statuses Available/Mission/Maintenance, Schedule button and modal, Today and week/month toggle.
+
+### Batch 2: Queries and filtering
+
+**Development**
+1. Branch: `git checkout -b feature/batch-2-queries`
+2. **BookingModal.jsx:** Add `.is('deleted_at', null)` to Supabase query in `fetchExistingBookings`.
+3. **Dashboard.jsx:** Same for next_booking query.
+4. **BookingModal.jsx:** Calendar header Mon–Sun (Monday first); day offset `(getDay() + 6) % 7`.
+5. **BookingModal.css:** `.calendar-header span` min-height, flex, align center for arrows and month.
+6. Confirm EditVehicleModal and VehicleCard hw_config read/write match.
+7. `npm run build`.
+
+**Testing**
+1. `npm run test:run` → pass.
+2. E2E: R3–R5 still pass.
+3. Manual: book then cancel; Reserve calendar and next booking do not show cancelled.
+4. Manual: Reserve calendar header Mon–Sun, arrows and month centered.
+
+### Batch 3: Forms and fields
+
+**Development**
+1. Branch: `git checkout -b feature/batch-3-forms`
+2. **EditVehicleModal.jsx:** Department dropdown (required) under Vehicle Name; Parameter Change text field under Software Version; include in formData and payload.
+3. **DB:** If `vehicles` lacks `parameter_change_notes`, add migration and run on staging.
+4. **BookingModal.jsx:** Remove Pilot required; Who ordered required (custom name when “others”); labels and error messages.
+5. **MyBookings.jsx:** Ensure `getBookingsByUser` returns `start_time`, `end_time`; use `formatRange(b.start_time, b.end_time)`; check CSS for truncation.
+6. `npm run build`.
+
+**Testing**
+1. `npm run test:run` → pass; add unit tests for validation if extracted.
+2. E2E: Add R6 (booking required/optional), R7 (Edit vehicle has Department, no Decommissioned).
+3. Manual: Department required, Parameter Change optional; Pilot optional, Who ordered required; My Bookings shows full date range.
+
+### Batch 4: Filter, Schedule filter, Changelog
+
+**Development**
+1. Branch: `git checkout -b feature/batch-4-filter-changelog`
+2. **Filter:** Button left of Schedule in Header; modal with R&D/Training/Marketing, then vehicle multi-select; return selected vehicle ids; Dashboard filter by `selectedVehicleIds` (null = all).
+3. **Schedule:** Vehicle filter in CalendarOverviewModal; calendar shows only selected vehicles’ bookings; with week/month and Today.
+4. **Changelog:** Icon on VehicleCard; click opens ChangeHistoryModal (default 3, Show More to scroll); remove Change Log from Profile menu.
+5. `npm run build`.
+
+**Testing**
+1. `npm run test:run` → pass; unit tests for Filter pure functions if added.
+2. E2E: R8 (Filter), R9 (Changelog icon and modal).
+3. Manual: Filter updates list; Schedule filter updates calendar; changelog icon opens modal and Show More; Profile has no Change Log.
+
+### Batch 5: Iza approval and notifications
+
+**Development**
+1. Branch: `git checkout -b feature/batch-5-approval`
+2. **DB:** Migration for `bookings.status`, `approval_requests`, `notifications` (reversible, backward compatible); set existing bookings `status = 'confirmed'`; run on staging first.
+3. **BookingModal.jsx:** If vehicle is Marketing and user is not approver (e.g. izabela@deltaquad.com, a.chang@deltaquad.com), write `status = 'pending_approval'` and create approval_request and notification.
+4. **Notification area:** In Header or Profile; approvers only; list pending (who, project, date, duration); Approve, Reject, Edit per item.
+5. **Approve:** Set booking.status = confirmed; mark approval_request and notification read.
+6. **Reject:** Set status = rejected; exclude from calendar.
+7. **Edit:** Open Reserve form pre-filled; save then set confirmed.
+8. `npm run build`.
+
+**Testing**
+1. `npm run test:run` → pass; unit test approver check.
+2. E2E: R10 on staging with a.chang@deltaquad.com (or izabela); book Marketing vehicle, notification appears, run Approve/Reject/Edit once each.
+3. Manual: Non-approver books Marketing; only approvers see notifications; after Approve calendar shows; after Reject does not; Edit allows change and save.
+
+### After each batch
+
+- [ ] `npm run test:run` passes
+- [ ] `npm run test:e2e` passes (or that batch’s R items)
+- [ ] `npm run build` passes
+- [ ] Manual pass through key paths, no console errors
+- [ ] Then proceed to next batch or merge/release
