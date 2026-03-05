@@ -154,19 +154,19 @@ test.describe('R8: Filter vehicles by department (authenticated)', () => {
 test.describe('R9: Vehicle changelog icon and modal (authenticated)', () => {
   test.skip(!hasAuth, 'Requires E2E auth')
 
-  test('Changelog icon opens change history modal', async ({ page }) => {
+  test('Changelog icon opens history modal', async ({ page }) => {
     await ensureLoggedIn(page)
     
     // Wait for vehicle cards to load
     await page.waitForSelector('.vehicle-card', { timeout: 15000 })
     
     // Click changelog button (📜 icon) on first vehicle card
-    const changelogBtn = page.locator('.btn-changelog').first()
+    const changelogBtn = page.locator('.icon-btn-changelog').first()
     await expect(changelogBtn).toBeVisible({ timeout: 10000 })
     await changelogBtn.click()
     
-    // Verify Change History modal opens
-    await expect(page.getByRole('heading', { name: /change history/i })).toBeVisible({ timeout: 5000 })
+    // Verify History modal opens
+    await expect(page.getByRole('heading', { name: /^History$/i })).toBeVisible({ timeout: 5000 })
     
     // Verify modal has close button
     const closeBtn = page.locator('.change-history-close')

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import FilterFunnelIcon from './FilterFunnelIcon'
 import './FilterModal.css'
 
 const DEPARTMENTS = ['R&D', 'Training', 'Marketing']
@@ -111,7 +112,7 @@ export default function FilterModal({ onClose, onApplyFilter, initialSelectedVeh
             <div className="filter-modal-container" onClick={handleModalClick}>
                 {/* Header */}
                 <div className="filter-modal-header">
-                    <div className="filter-modal-icon" style={{ fontSize: '1.5rem' }}>▼</div>
+                    <FilterFunnelIcon size={24} color="currentColor" className="filter-modal-icon" />
                     <h2>Filter Vehicles</h2>
                     <button onClick={onClose} className="filter-modal-close">×</button>
                 </div>

@@ -8,6 +8,16 @@ import { normalizeConfig, hardwareConfigToText } from '../lib/hardwareConfig'
 import HardwareConfigModal from './HardwareConfigModal'
 import './EditVehicleModal.css'
 
+const ALLOWED_STATUSES = ['Available', 'Maintenance']
+
+function normalizeStatus(status) {
+    if (!status) return 'Available'
+    const s = status.trim()
+    if (ALLOWED_STATUSES.includes(s)) return s
+    if (s.toLowerCase().includes('mission') || s.toLowerCase().includes('ready')) return 'Available'
+    return 'Available'
+}
+
 export default function EditVehicleModal({ vehicle, onClose, onSave }) {
     const { user, displayName } = useAuth()
     const { showSuccess, showError } = useToast()
@@ -15,7 +25,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
 
     const [formData, setFormData] = useState({
         name: vehicle?.name || '',
-        status: vehicle?.status || 'Available',
+        status: normalizeStatus(vehicle?.status),
         department: vehicle?.department || 'R&D',
         hw_config: normalizeConfig(vehicle?.hw_config ?? null),
         sw_version: vehicle?.sw_version || '',
@@ -237,7 +247,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
 
                     {/* Status */}
                     <div className="edit-form-group">
-                        <label>Status *</label>
+                        <label>Status</label>
                         <div className="edit-select-wrapper">
                             <select 
                                 name="status" 
@@ -248,7 +258,6 @@ export default function EditVehicleModal({ vehicle, onClose, onSave }) {
                                 aria-describedby={validationErrors.status ? 'status-error' : undefined}
                             >
                                 <option value="Available">✓ Available</option>
-                                <option value="Mission">🚀 On Mission</option>
                                 <option value="Maintenance">⚠️ Maintenance</option>
                             </select>
                         </div>

@@ -250,6 +250,29 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
+/* Delete Vehicle modal: danger primary button */
+.delete-vehicle-submit,
+.delete-vehicle-confirm-btn {
+    background: #dc2626;
+}
+.delete-vehicle-submit:hover:not(:disabled),
+.delete-vehicle-confirm-btn:hover:not(:disabled) {
+    background: #b91c1c;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+.delete-vehicle-submit:disabled,
+.delete-vehicle-confirm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.confirm-delete-message {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;

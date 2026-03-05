@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { CalendarGridSkeleton } from './LoadingSkeleton'
 import FilterModal from './FilterModal'
+import FilterFunnelIcon from './FilterFunnelIcon'
+import BookingModal from './BookingModal'
 import './CalendarOverviewModal.css'
 
 export default function CalendarOverviewModal({ onClose }) {
@@ -10,6 +12,8 @@ export default function CalendarOverviewModal({ onClose }) {
     const [bookings, setBookings] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedBooking, setSelectedBooking] = useState(null)
+    const [editingBooking, setEditingBooking] = useState(null)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
     const [allVehicles, setAllVehicles] = useState([])
     const [selectedVehicleIds, setSelectedVehicleIds] = useState([])
     const [showFilterModal, setShowFilterModal] = useState(false)
@@ -65,6 +69,12 @@ export default function CalendarOverviewModal({ onClose }) {
     }, [])
 
     useEffect(() => {
+        const onBookingListChanged = () => setRefreshTrigger((c) => c + 1)
+        window.addEventListener('booking-list-changed', onBookingListChanged)
+        return () => window.removeEventListener('booking-list-changed', onBookingListChanged)
+    }, [])
+
+    useEffect(() => {
         let cancelled = false
         setLoading(true)
         const rangeStart = viewMode === 'weekly'
@@ -77,8 +87,9 @@ export default function CalendarOverviewModal({ onClose }) {
             try {
                 let query = supabase
                     .from('bookings')
-                    .select('id, start_time, end_time, project_name, pilot_name, who_ordered, location, duration, notes, risk_level, vehicle_id, vehicles(name)')
+                    .select('id, start_time, end_time, project_name, pilot_name, requester, location, duration, description, risk_level, vehicle_id, status, vehicles(name)')
                     .is('deleted_at', null)
+                    .neq('status', 'rejected')
                     .lte('start_time', rangeEnd)
                     .gte('end_time', rangeStart)
                     .order('start_time', { ascending: true })
@@ -107,13 +118,14 @@ export default function CalendarOverviewModal({ onClose }) {
                         vehicle_id: b?.vehicle_id,
                         project: b?.project_name ?? '',
                         pilot: b?.pilot_name ?? '',
-                        who_ordered: b?.who_ordered ?? '',
+                        requester: b?.requester ?? '',
                         location: b?.location ?? '',
                         duration: b?.duration ?? '',
-                        notes: b?.notes ?? '',
+                        description: b?.description ?? '',
                         risk_level: b?.risk_level ?? '',
                         start_date: startDate,
-                        end_date: endDate
+                        end_date: endDate,
+                        status: b?.status ?? 'confirmed'
                     }
                 }).filter((b) => b.id != null && b.start_date && b.end_date)
                 setBookings(mapped)
@@ -125,7 +137,7 @@ export default function CalendarOverviewModal({ onClose }) {
         }
         fetchBookings()
         return () => { cancelled = true }
-    }, [year, month, daysInMonth, viewMode, weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate(), weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate(), selectedVehicleIds])
+    }, [year, month, daysInMonth, viewMode, weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate(), weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate(), selectedVehicleIds, refreshTrigger])
 
     const getBookingsForDate = (day) => {
         if (day < 1 || day > daysInMonth) return []
@@ -230,7 +242,7 @@ export default function CalendarOverviewModal({ onClose }) {
                             e.currentTarget.style.background = selectedVehicleIds.length > 0 ? '#3b82f6' : '#334155'
                         }}
                     >
-                        <span style={{ fontSize: '1.1rem' }}>▼</span> Filter
+                        <FilterFunnelIcon size={16} color="#fff" /> Filter
                         {selectedVehicleIds.length > 0 && (
                             <span style={{
                                 background: '#1e40af',
@@ -306,6 +318,12 @@ export default function CalendarOverviewModal({ onClose }) {
                                                             <span className="booking-vehicle">{booking.vehicle}</span>
                                                             <span className="booking-chip-sep"> · </span>
                                                             <span className="booking-project">{booking.project || '—'}</span>
+                                                            {booking.status === 'pending_approval' && (
+                                                                <>
+                                                                    <span className="booking-chip-sep"> · </span>
+                                                                    <span className="booking-pending-badge">Pending approval</span>
+                                                                </>
+                                                            )}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -360,6 +378,12 @@ export default function CalendarOverviewModal({ onClose }) {
                                                             <span className="booking-vehicle">{booking.vehicle}</span>
                                                             <span className="booking-chip-sep"> · </span>
                                                             <span className="booking-project">{booking.project || '—'}</span>
+                                                            {booking.status === 'pending_approval' && (
+                                                                <>
+                                                                    <span className="booking-chip-sep"> · </span>
+                                                                    <span className="booking-pending-badge">Pending approval</span>
+                                                                </>
+                                                            )}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -443,7 +467,12 @@ export default function CalendarOverviewModal({ onClose }) {
                                 <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Vehicle</div>
                                 <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '600' }}>{selectedBooking?.vehicle ?? '—'}</div>
                             </div>
-                            
+                            {selectedBooking?.status === 'pending_approval' && (
+                                <div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Status</div>
+                                    <div style={{ color: '#f59e0b', fontWeight: '600' }}>Pending approval</div>
+                                </div>
+                            )}
                             <div>
                                 <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Project</div>
                                 <div style={{ color: '#fff' }}>{selectedBooking?.project || '—'}</div>
@@ -466,8 +495,8 @@ export default function CalendarOverviewModal({ onClose }) {
                             </div>
                             
                             <div>
-                                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Ordered By</div>
-                                <div style={{ color: '#fff' }}>{selectedBooking?.who_ordered || '—'}</div>
+                                <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Requester</div>
+                                <div style={{ color: '#fff' }}>{selectedBooking?.requester || '—'}</div>
                             </div>
                             
                             {selectedBooking?.location && (
@@ -491,12 +520,48 @@ export default function CalendarOverviewModal({ onClose }) {
                                 </div>
                             )}
                             
-                            {selectedBooking?.notes && (
+                            {selectedBooking && (selectedBooking.description) && (
                                 <div>
-                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Notes</div>
-                                    <div style={{ color: '#cbd5e1', fontSize: '0.95rem', fontStyle: 'italic' }}>{selectedBooking.notes}</div>
+                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>Description</div>
+                                    <div style={{ color: '#cbd5e1', fontSize: '0.95rem', fontStyle: 'italic' }}>{selectedBooking.description}</div>
                                 </div>
                             )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEditingBooking(selectedBooking)
+                                    setSelectedBooking(null)
+                                }}
+                                style={{
+                                    background: '#3b82f6',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                Edit
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedBooking(null)}
+                                style={{
+                                    background: '#475569',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -511,6 +576,27 @@ export default function CalendarOverviewModal({ onClose }) {
                         setShowFilterModal(false)
                     }}
                     initialSelectedVehicles={selectedVehicleIds}
+                />
+            )}
+
+            {editingBooking && (
+                <BookingModal
+                    vehicle={{
+                        id: editingBooking.vehicle_id,
+                        name: editingBooking.vehicle ?? 'Vehicle'
+                    }}
+                    existingBooking={{
+                        ...editingBooking,
+                        start_time: editingBooking.start_date ? editingBooking.start_date + 'T00:00:00Z' : null,
+                        end_time: editingBooking.end_date ? editingBooking.end_date + 'T23:59:59Z' : null,
+                        project_name: editingBooking.project,
+                        pilot_name: editingBooking.pilot
+                    }}
+                    onClose={() => setEditingBooking(null)}
+                    onSave={() => {
+                        setEditingBooking(null)
+                        setRefreshTrigger((c) => c + 1)
+                    }}
                 />
             )}
         </div>

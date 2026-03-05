@@ -9,21 +9,20 @@ const RISK_ICONS = {
 
 const STATUS_Map = {
     'Available': 'bg-green-500',
-    'Maintenance': 'bg-yellow-500',
-    'Mission': 'bg-blue-500'
+    'Maintenance': 'bg-yellow-500'
 }
 
-export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, onDelete }) {
+export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory }) {
     const { role } = useAuth()
     const isEditor = role === 'editor' || role === 'admin'
-    const isAdmin = role === 'admin'
 
-    // Status mapping for colors/labels
+
+    // Status mapping for colors/labels (only Available and Maintenance are valid; legacy "On-Mission" etc. display as Available)
     const getStatusStyle = (status) => {
         const s = status?.toLowerCase() || 'unknown'
         if (s.includes('available') || s.includes('ready')) return { className: 'status-ready', icon: '✓', label: 'Available' }
         if (s.includes('maintenance')) return { className: 'status-maintenance', icon: '⚠️', label: 'Maintenance' }
-        if (s.includes('mission')) return { className: 'status-mission', icon: '🚀', label: 'On Mission' }
+        if (s.includes('mission')) return { className: 'status-ready', icon: '✓', label: 'Available' }
         return { className: 'status-unknown', icon: '?', label: status }
     }
 
@@ -41,7 +40,7 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, on
                     <button 
                         className="icon-btn-changelog" 
                         onClick={() => onViewHistory(vehicle)}
-                        title="View change history"
+                        title="View history"
                         style={{
                             background: 'none',
                             border: 'none',
@@ -64,23 +63,11 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, on
                     >
                         📜
                     </button>
-                    {isEditor && (
-                        <>
-                            <button className="icon-btn-edit" onClick={() => onEdit(vehicle)} title="Edit Vehicle">
-                                ✎
-                            </button>
-                            {isAdmin && onDelete && (
-                                <button
-                                    className="icon-btn-delete"
-                                    onClick={() => onDelete(vehicle)}
-                                    title="Delete Vehicle (soft delete)"
-                                    aria-label="Delete vehicle"
-                                >
-                                    🗑
-                                </button>
-                            )}
-                        </>
-                    )}
+                                    {isEditor && (
+                                        <button className="icon-btn-edit" onClick={() => onEdit(vehicle)} title="Edit Vehicle">
+                                            ✎
+                                        </button>
+                                    )}
                 </div>
             </div>
 
@@ -94,7 +81,9 @@ export default function VehicleCard({ vehicle, onEdit, onBook, onViewHistory, on
             {/* Details */}
             <div className="card-main-info">
                 <p className="vehicle-desc">
-                    {vehicle.type} • {vehicle.sw_version ? `v${vehicle.sw_version}` : 'No SW info'}
+                    {vehicle.type}
+                    <br />
+                    Software Version: {vehicle.sw_version ?? 'No SW info'}
                     <br />
                     {vehicle.notes && <span style={{ opacity: 0.7 }}>{vehicle.notes}</span>}
                     {vehicle.hw_config && hardwareConfigToText(normalizeConfig(vehicle.hw_config)) && (
