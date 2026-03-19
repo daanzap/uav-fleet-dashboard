@@ -12,4 +12,9 @@ export default defineConfig({
     setupFiles: './src/test/setup.js',
     include: ['src/**/*.{test,spec}.{js,jsx}'],
   },
+  server:{
+    allowedHosts: ['uav-fleet-dashboard.ngrok.app'],
+  },
 })
+
+

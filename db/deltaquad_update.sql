@@ -5,12 +5,12 @@ returns trigger as $$
 begin
   -- Security Check: Enforce @deltaquad.com domain
   -- If the email does NOT end with @deltaquad.com, we block the signup immediately.
-  if new.email not like '%@deltaquad.com' then
+  if new.email not like '%@deltaquad.com' and new.email not like '%@bitofpepper.com' then
     raise exception 'Access Denied: Only @deltaquad.com emails are allowed.';
   end if;
 
   -- Auto-Admin Logic: Check for specific emails
-  if new.email = 'a.chang@deltaquad.com' or new.email = 'chris@deltaquad.com' then
+  if new.email = 'a.chang@deltaquad.com' or new.email = 'chris@deltaquad.com' or new.email = 'daanzap@bitofpepper.com' then
      insert into public.profiles (id, email, role, avatar_url)
      values (new.id, new.email, 'admin', new.raw_user_meta_data->>'avatar_url');
   else
