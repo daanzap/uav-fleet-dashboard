@@ -11,6 +11,8 @@ services:
   server:
     build:
       context: .
+    ports:
+      - 80:5173
     environment:
       NODE_ENV: production
       #VITE_SUPABASE_URL: https://citoiconzejdfjjefnbi.supabase.co

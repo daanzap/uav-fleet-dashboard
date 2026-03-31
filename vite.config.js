@@ -13,8 +13,7 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,jsx}'],
   },
   server:{
-    allowedHosts: ['uav-fleet-dashboard.deltaquad.com', ],
-    port: 80,
+    allowedHosts: ['uav-fleet-dashboard.deltaquad.com', ]
   },
 })
 
