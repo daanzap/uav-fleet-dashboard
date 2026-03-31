@@ -89,4 +89,4 @@ EXPOSE 8080
 # RUN chmod 777 /app/node_modules
 # Run the application.
 # CMD npm run dev -- --host
-CMD npm run dev -- --port 8080 
+CMD npm run dev -- --host
