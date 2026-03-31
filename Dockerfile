@@ -81,11 +81,12 @@ COPY --from=build /usr/src/app/vite.config.js ./vite.config.js
 
 
 # Expose the port that the application listens on.
-EXPOSE 5173
+EXPOSE 80
 
 # # set proper file access
 # RUN mkdir /app
 # RUN mkdir /app/node_modules
 # RUN chmod 777 /app/node_modules
 # Run the application.
-CMD npm run dev -- --host
+# CMD npm run dev -- --host
+CMD npm run dev -- --host --port 80 
