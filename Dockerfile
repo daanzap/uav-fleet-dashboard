@@ -81,7 +81,7 @@ COPY --from=build /usr/src/app/vite.config.js ./vite.config.js
 
 
 # Expose the port that the application listens on.
-EXPOSE 8080
+EXPOSE 5173
 
 # # set proper file access
 # RUN mkdir /app
