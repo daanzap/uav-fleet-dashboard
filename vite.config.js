@@ -13,7 +13,7 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,jsx}'],
   },
   server:{
-    allowedHosts: ['uav-fleet-dashboard.ngrok.app', 'uav-fleet-dashboard.deltaquad.com'],
+    allowedHosts: ['uav-fleet-dashboard.deltaquad.com'],
   },
 })
 
