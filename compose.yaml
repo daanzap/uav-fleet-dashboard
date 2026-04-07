@@ -17,7 +17,7 @@ services:
       NODE_ENV: production
       #VITE_SUPABASE_URL: https://citoiconzejdfjjefnbi.supabase.co
       #VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpdG9pY29uemVqZGZqamVmbmJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDQ5MTgsImV4cCI6MjA4MzI4MDkxOH0.E6vv3ZRILj9v4x7-g0CZI1mKMB-SaFzfrfiqc48ftfw
-      VITE_SUPABASE_URL: http://supabase-uav-fleet-dashboard.deltaquad.com:8000
+      VITE_SUPABASE_URL: https://supabase-uav-fleet-dashboard.deltaquad.com
       VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzczMTUxODE2LCJleHAiOjE5MzA4MzE4MTZ9.NMGyrAxTW-Crke0gUbYLR86wcgc8_3K-FtjQTerr4BI
 
 # The commented out section below is an example of how to define a PostgreSQL
