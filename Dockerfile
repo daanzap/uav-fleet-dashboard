@@ -89,4 +89,4 @@ EXPOSE 5173
 # RUN chmod 777 /app/node_modules
 # Run the application.
 # CMD npm run dev -- --host
-CMD npm run dev -- --host 127.0.0.1
+CMD npm run dev -- --host
